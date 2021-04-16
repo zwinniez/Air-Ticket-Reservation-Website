@@ -1,0 +1,39 @@
+<html>
+<head>
+</head>
+<body style="text-align:center">
+<form action="/registerAuth_customer" method="POST">
+    <h1>Register as a Customer</h1>
+    <label>Email</label>
+	<input type="text" name = "email" placeholder="email" required/></br>
+    <label>Name</label>
+    <input type="text" name = "name" placeholder="name" required/></br>
+    <label>Password</label>
+	<input type="password" name = "password" placeholder="password" required/></br>
+    <label>Building Number</label>
+	<input type="text" name = "building_number" placeholder="123" required/></br>
+    <label>Street</label>
+    <input type="text" name = "street" placeholder="Purple St" required/></br>
+    <label>City</label>
+    <input type="text" name = "city" placeholder="Los Angeles" required/></br>
+    <label>State</label>
+    <input type="text" name = "state" placeholder="CA" required/></br>
+    <label>Phone Number</label>
+	<input type="text" name = "phone_number" placeholder="1234567890" required/></br>
+    <label>Passport Number</label>
+	<input type="text" name = "passport_number" placeholder="FG4567892" required/></br>
+    <label>Passport Expiration</label>
+	<input type="text" name = "passport_expiration" placeholder="YYYY-MM-DD" required/></br>
+    <label>Passport Country</label>
+	<input type="text" name = "passport_country" placeholder="United States" required/></br>
+    <label>Date of Birth</label>
+	<input type="text" name = "date_of_birth" placeholder="YYYY-MM-DD" required/></br>
+
+	<input type="submit" value = Register />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/">Go back</a>
+</body>
+</html>
