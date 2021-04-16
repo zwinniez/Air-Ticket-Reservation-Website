@@ -59,7 +59,7 @@ def loginAuth_customer():
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM customer WHERE email = %s and password = %s'
+	query = 'SELECT * FROM customer WHERE email = %s and password = md5(%s)'
 	cursor.execute(query, (email, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
@@ -87,7 +87,7 @@ def loginAuth_booking_agent():
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM booking_agent WHERE email = %s and password = %s and booking_agent_ID = %s'
+	query = 'SELECT * FROM booking_agent WHERE email = %s and password = md5(%s) and booking_agent_ID = %s'
 	cursor.execute(query, (email, password, ID))
 	#stores the results in a variable
 	data = cursor.fetchone()
@@ -114,7 +114,7 @@ def loginAuth_airline_staff():
 	#cursor used to send queries
 	cursor = conn.cursor()
 	#executes query
-	query = 'SELECT * FROM airline_staff WHERE username = %s and password = %s'
+	query = 'SELECT * FROM airline_staff WHERE username = %s and password = md5(%s)'
 	cursor.execute(query, (username, password))
 	#stores the results in a variable
 	data = cursor.fetchone()
@@ -162,7 +162,7 @@ def registerAuth_customer():
 		error = "This user already exists"
 		return render_template('register_customer.html', error = error)
 	else:
-		ins = 'INSERT INTO customer VALUES(%s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s)'
+		ins = 'INSERT INTO customer VALUES(%s, %s, md5(%s), %s,%s, %s, %s, %s, %s, %s, %s, %s)'
 		cursor.execute(ins, (email, name, password, building_number, street, city, state, phone, passport_number,\
 			passport_expiration, passport_country, dob))
 		conn.commit()
@@ -191,7 +191,7 @@ def registerAuth_booking_agent():
 		error = "This user already exists"
 		return render_template('register_booking_agent.html', error = error)
 	else:
-		ins = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
+		ins = 'INSERT INTO booking_agent VALUES(%s, md5(%s), %s)'
 		cursor.execute(ins, (email, password, ID))
 		conn.commit()
 		cursor.close()
@@ -221,13 +221,13 @@ def registerAuth_airline_staff():
 		error = "This user already exists"
 		return render_template('register_airline_staff.html', error = error)
 	else:
-		ins = 'INSERT INTO airline_staff VALUES(%s, %s,%s, %s,%s)'
+		ins = 'INSERT INTO airline_staff VALUES(%s, md5(%s), %s, %s, %s)'
 		cursor.execute(ins, (username, password, fname, lname, dob))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
 
-'''
+
 #home page for customer
 @app.route('/home_customer')
 def home_customer():
@@ -254,7 +254,7 @@ def home_booking_agent():
     #    print(each['blog_post'])
     #cursor.close()
     return render_template('home_booking_agent.html', username=username, posts=data1)
-
+'''
 #home page for airline staff
 @app.route('/home_airline_staff')
 def home_airline_staff():
