@@ -231,15 +231,30 @@ def registerAuth_airline_staff():
 #home page for customer
 @app.route('/home_customer')
 def home_customer():
-    #email = session['email']
-    #cursor = conn.cursor();
-    #query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    #cursor.execute(query, (username))
-    #data1 = cursor.fetchall() 
-    # for each in data1:
-    #     print(each['blog_post'])
-    # cursor.close()
-    return render_template('home_customer.html', email=email)#, posts=data1)
+    email = session['email']
+    cursor = conn.cursor();
+    query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
+		FROM purchase natural join reserve natural join flight WHERE c_email = %s'
+    cursor.execute(query, (email))
+    data1 = cursor.fetchall() 
+    cursor.close()
+    return render_template('home_customer.html', email=email, flights=data1)
+
+@app.route('/search_flights', methods=['GET', 'POST'])
+def search_flights():
+	email = session['email']
+	departure = request.form['departure'].lower()
+	arrival = request.form['arrival'].lower()
+	cursor = conn.cursor();
+	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+		 (name = %s or city = %s) and flight_num in \
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
+	cursor.execute(query, (departure, departure, arrival, arrival))
+	data2 = cursor.fetchall()
+	for each in data2:
+		print(each)
+	cursor.close()
+	return render_template('home_customer.html', email=email, searches = data2)
 
 #home page for booking agent 
 @app.route('/home_booking_agent')
