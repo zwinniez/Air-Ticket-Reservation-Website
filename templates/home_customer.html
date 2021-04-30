@@ -3,12 +3,20 @@
 </head>
 <body>
 <h1>Welcome {{email}}</h1>
+<h2>Search for available flights</h2>
 <form action="/search_flights" method="POST">
 	
 	<input type="text" name = "departure" placeholder="departure point" required/> </br>
 	<input type="text" name = "arrival" placeholder="arrival destination" required/> </br>
+	<input type="submit" value = Search />
+</form>
 
-
+<h2>Search for flight statuses</h2>
+<form action="/search_status" method="POST">
+	<input type="text" name = "airline_name" placeholder="Airline Name" required/> </br>
+	<input type="text" name = "flight_num" placeholder="Flight #" required/> </br>
+	<input type="text" name = "departure_date" placeholder="departure date" /> </br>
+	<input type="text" name = "arrival_date" placeholder="arrival date" /> </br>
 	<input type="submit" value = Search />
 </form>
 
@@ -17,21 +25,6 @@
 		border: 1px solid rgb(31, 0, 143);
 	}
 </style>
-{% if searches %}
-	<h1>Flights</h1>
-	<table>
-		<th>Flight Number</th>
-		<th>Departure Time</th>
-
-	{% for line in searches %}
-		<tr>
-			<td>{{line['flight_num']}}</td>
-			<td>{{line['departure_date_and_time']}}</td>
-
-		</tr>
-	{% endfor %}
-	</table>
-{% endif %}
 
 <table>
 	<th>Time</th>

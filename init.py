@@ -231,18 +231,49 @@ def registerAuth_airline_staff():
 #home page for customer
 @app.route('/home_customer')
 def home_customer():
-    email = session['email']
-    cursor = conn.cursor();
-    query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
+	email = session['email']
+	cursor = conn.cursor();
+	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
 		FROM purchase natural join reserve natural join flight WHERE c_email = %s'
-    cursor.execute(query, (email))
-    data1 = cursor.fetchall() 
-    cursor.close()
-    return render_template('home_customer.html', email=email, flights=data1)
+	cursor.execute(query, (email))
+	data1 = cursor.fetchall() 
+	cursor.close()
+	return render_template('home_customer.html', email=email, flights=data1)
+
+#search flights page 
+@app.route('/flights')
+def flights():
+	email = session['email']
+	searches = session['searches']
+	return render_template('flights.html', email=email, searches=searches)
+
+@app.route('/flight_status')
+def flight_status():
+	email = session['email']
+	statuses = session['statuses']
+	return render_template('flight_status.html', email=email, statuses=statuses)
+
+@app.route('/search_status', methods=['GET', 'POST'])
+def search_status():
+	email = session['email']
+	airline_name = request.form['airline_name'].lower()
+	flight_num = request.form['flight_num']
+	departure_date = request.form['departure_date']
+	arrival_date = request.form['arrival_date']
+	cursor = conn.cursor();
+	query = 'SELECT name, flight_num, status FROM flight WHERE\
+		 name = %s and flight_num = %s and departure_date_and_time = %s \
+		 	 and arrival_date_and_time = %s'
+	cursor.execute(query, (airline_name, flight_num, departure_date, arrival_date))
+	data3 = cursor.fetchall()
+	cursor.close()
+	session['statuses'] = data3
+	return redirect(url_for('flight_status'))
 
 @app.route('/search_flights', methods=['GET', 'POST'])
 def search_flights():
 	email = session['email']
+	print(request.form)
 	departure = request.form['departure'].lower()
 	arrival = request.form['arrival'].lower()
 	cursor = conn.cursor();
@@ -251,10 +282,9 @@ def search_flights():
 			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
 	cursor.execute(query, (departure, departure, arrival, arrival))
 	data2 = cursor.fetchall()
-	for each in data2:
-		print(each)
 	cursor.close()
-	return render_template('home_customer.html', email=email, searches = data2)
+	session['searches'] = data2
+	return redirect(url_for('flights'))
 
 #home page for booking agent 
 @app.route('/home_booking_agent')
@@ -297,7 +327,10 @@ def post():
 '''
 @app.route('/logout')
 def logout():
-	session.pop('username')
+	session.pop('email')
+	session.pop('searches')
+	session.pop('statuses')
+	##logout all session variables TODO 
 	return redirect('/')
 	
 app.secret_key = 'some key that you will never guess'
