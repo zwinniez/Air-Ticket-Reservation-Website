@@ -7,25 +7,25 @@
 		border: 1px solid rgb(31, 0, 143);
 	}
 </style>
-{% if searches %}
-	<h1>Flights</h1>
+{% if statuses %}
+	<h1>Flight Statuses</h1>
 	<table>
+        <th>Airline</th>
 		<th>Flight Number</th>
-		<th>Departure Time</th>
-		<th>Tickets</th>
+		<th>Status</th>
 
-	{% for line in searches %}
+	{% for line in statuses %}
 		<tr>
+            <td>{{line['name']}}</td>
 			<td>{{line['flight_num']}}</td>
-			<td>{{line['departure_date_and_time']}}</td>
-			<td><button type = 'button'>Available</button></td>
+			<td>{{line['status']}}</td>
 
 		</tr>
 	{% endfor %}
 	</table>
 {% endif %}
 
-<a href ='/home_customer'>Go Back</a>
+<a href ='/home_booking_agent'>Go Back</a>
 
 <a href="/logout">Logout</a>
 

@@ -8,6 +8,8 @@
 	
 	<input type="text" name = "departure" placeholder="departure point" required/> </br>
 	<input type="text" name = "arrival" placeholder="arrival destination" required/> </br>
+	<input type="text" name = "departure_date" placeholder="departure date" required/> </br>
+	<input type="text" name = "return_date" placeholder="return date"/> </br>
 	<input type="submit" value = Search />
 </form>
 
@@ -19,13 +21,9 @@
 	<input type="text" name = "arrival_date" placeholder="arrival date" /> </br>
 	<input type="submit" value = Search />
 </form>
-
-<style type="text/css">
-	table, th, td{
-		border: 1px solid rgb(31, 0, 143);
-	}
-</style>
-
+<br>
+<br>
+<h2>Your booked flights</h2>
 <table>
 	<th>Time</th>
 	<th>Flight Number</th>
@@ -44,10 +42,60 @@
 	</tr>
 {% endfor %}
 </table>
+<br>
+<br>
+<h2>{{title}}</h2>
+<script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+
+<canvas id="chart" width="600" heigh="500"></canvas>
+	<script>
+		//bar chart data
+		var barData = {
+			labels : [
+				{% for item in labels %}
+				"{{item}}",
+				{% endfor %}
+			],
+			datasets: [{
+				fillColor: "rgba(151,187,205,0.2)",
+				strokeColor: "rgba(151,187,205,1",
+				pointColor: "rgba(151,187,205,1)",
+				data: [
+					{% for item in values %}
+					"{{item}}",
+					{% endfor %}
+				]
+			}
+		]
+		}
+	// get bar chart canvas
+	var mychart = document.getElementById("chart").getContext("2d");
+	steps = 10
+	max = {{max}}
+
+	//draw bar chart 
+	new Chart(mychart).Bar(barData, {
+		scaleOverride: true,
+		scaleSteps: steps,
+		scaleStepWidth: Math.ceil(max/steps),
+		scaleStartValue: 0,
+		scaleShowVerticalLines: true,
+		scaleShowGrideLines: true,
+		barShowStroke: true,
+		scakeShowLabels: true
+	}
+	);
+
+</script>
 
 <a href="/logout">Logout</a>
 
 </body>
 
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+</style>
 
 </html>

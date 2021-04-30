@@ -227,7 +227,6 @@ def registerAuth_airline_staff():
 		cursor.close()
 		return render_template('index.html')
 
-
 #home page for customer
 @app.route('/home_customer')
 def home_customer():
@@ -238,20 +237,52 @@ def home_customer():
 	cursor.execute(query, (email))
 	data1 = cursor.fetchall() 
 	cursor.close()
-	return render_template('home_customer.html', email=email, flights=data1)
+
+	months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+	cursor = conn.cursor();
+	query = "SELECT sum(sold_price) as total, purhcase_date_and_time as date FROM ticket natural join customer\
+		 WHERE email = %s \
+		GROUP BY purhcase_date_and_time" #fix mispelling in db
+	cursor.execute(query, (email))
+	data4= cursor.fetchall()
+	cursor.close()
+	labels = [each for each in months]
+	values = [each['total'] for each in data4]
+	colors = []
+
+	return render_template('home_customer.html', email=email, flights=data1, \
+		title="Your past year spendings", max=10000, labels=labels, values=values, \
+			set=zip(values,labels, colors))
 
 #search flights page 
 @app.route('/flights')
 def flights():
 	email = session['email']
-	searches = session['searches']
-	return render_template('flights.html', email=email, searches=searches)
+	departure_searches = session['departure_searches']
+	return_searches = session['return_searches']
+	return render_template('flights_customer.html', email=email, departure_searches=departure_searches,\
+		return_searches = return_searches)
+
+#search flights page for BA
+@app.route('/flights_booking_agent')
+def flights_booking_agent():
+	email = session['email']
+	departure_searches = session['departure_searches']
+	return_searches = session['return_searches']
+	return render_template('flights_booking_agent.html', email=email, departure_searches=departure_searches,\
+		return_searches = return_searches)
 
 @app.route('/flight_status')
 def flight_status():
 	email = session['email']
 	statuses = session['statuses']
 	return render_template('flight_status.html', email=email, statuses=statuses)
+
+@app.route('/flight_status_booking_agent')
+def flight_status_booking_agent():
+	email = session['email']
+	statuses = session['statuses']
+	return render_template('flight_status_booking_agent.html', email=email, statuses=statuses)
 
 @app.route('/search_status', methods=['GET', 'POST'])
 def search_status():
@@ -276,29 +307,88 @@ def search_flights():
 	print(request.form)
 	departure = request.form['departure'].lower()
 	arrival = request.form['arrival'].lower()
+	departure_date = request.form['departure_date']
+	return_date = request.form['return_date']
 	cursor = conn.cursor();
 	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 		 (name = %s or city = %s) and flight_num in \
-			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
-	cursor.execute(query, (departure, departure, arrival, arrival))
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s)\
+				 and departure_date_and_time = %s'
+	cursor.execute(query, (departure, departure, arrival, arrival, departure_date))
 	data2 = cursor.fetchall()
 	cursor.close()
-	session['searches'] = data2
+	session['departure_searches'] = data2
+	if return_date is not None:
+		cursor = conn.cursor();
+		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+			(name = %s or city = %s) and flight_num in \
+				(select flight_num FROM airport natural join departure where name = %s or city = %s)\
+					and departure_date_and_time = %s'
+		cursor.execute(query, (arrival, arrival, departure, departure, return_date))
+		data2 = cursor.fetchall()
+		cursor.close()
+		session['return_searches'] = data2
 	return redirect(url_for('flights'))
+
+@app.route('/search_status_BA', methods=['GET', 'POST'])
+def search_status_BA():
+	email = session['email']
+	airline_name = request.form['airline_name'].lower()
+	flight_num = request.form['flight_num']
+	departure_date = request.form['departure_date']
+	arrival_date = request.form['arrival_date']
+	cursor = conn.cursor();
+	query = 'SELECT name, flight_num, status FROM flight WHERE\
+		 name = %s and flight_num = %s and departure_date_and_time = %s \
+		 	 and arrival_date_and_time = %s'
+	cursor.execute(query, (airline_name, flight_num, departure_date, arrival_date))
+	data3 = cursor.fetchall()
+	cursor.close()
+	session['statuses'] = data3
+	return redirect(url_for('flight_status_booking_agent'))
+
+#searching for flights for BA
+@app.route('/search_flights_BA', methods=['GET', 'POST'])
+def search_flights_BA():
+	email = session['email']
+	print(request.form)
+	departure = request.form['departure'].lower()
+	arrival = request.form['arrival'].lower()
+	departure_date = request.form['departure_date']
+	return_date = request.form['return_date']
+	cursor = conn.cursor();
+	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+		 (name = %s or city = %s) and flight_num in \
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s)\
+				 and departure_date_and_time = %s'
+	cursor.execute(query, (departure, departure, arrival, arrival, departure_date))
+	data2 = cursor.fetchall()
+	cursor.close()
+	session['departure_searches'] = data2
+	if return_date is not None:
+		cursor = conn.cursor();
+		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+			(name = %s or city = %s) and flight_num in \
+				(select flight_num FROM airport natural join departure where name = %s or city = %s)\
+					and departure_date_and_time = %s'
+		cursor.execute(query, (arrival, arrival, departure, departure, return_date))
+		data2 = cursor.fetchall()
+		cursor.close()
+		session['return_searches'] = data2
+	return redirect(url_for('flights_booking_agent'))
 
 #home page for booking agent 
 @app.route('/home_booking_agent')
 def home_booking_agent():
-    
-    #username = session['username']
-    #cursor = conn.cursor();
-    #query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    #cursor.execute(query, (username))
-    #data1 = cursor.fetchall() 
-    #for each in data1:
-    #    print(each['blog_post'])
-    #cursor.close()
-    return render_template('home_booking_agent.html', username=username, posts=data1)
+	email = session['email']
+	cursor = conn.cursor();
+	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
+		FROM purchase natural join reserve natural join flight WHERE b_email = %s'
+	cursor.execute(query, (email))
+	data1 = cursor.fetchall() 
+	cursor.close()
+	return render_template('home_booking_agent.html', email=email, flights=data1)
+	
 '''
 #home page for airline staff
 @app.route('/home_airline_staff')
@@ -328,7 +418,8 @@ def post():
 @app.route('/logout')
 def logout():
 	session.pop('email')
-	session.pop('searches')
+	session.pop('departure_searches')
+	session.pop('return_searches')
 	session.pop('statuses')
 	##logout all session variables TODO 
 	return redirect('/')
