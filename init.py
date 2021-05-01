@@ -240,19 +240,26 @@ def home_customer():
 
 	months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 	cursor = conn.cursor();
-	query = "SELECT sum(sold_price) as total, purhcase_date_and_time as date FROM ticket natural join customer\
-		 WHERE email = %s \
-		GROUP BY purhcase_date_and_time" #fix mispelling in db
+	query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
+		 WHERE email = %s and (select now()) - purhcase_date_and_time > 1" #fix mispelling in db
 	cursor.execute(query, (email))
 	data4= cursor.fetchall()
 	cursor.close()
 	labels = [each for each in months]
-	values = [each['total'] for each in data4]
+	values = [0 for i in range(12)]
+	total = 0
+	for i in range(12):
+		for each in data4:
+			if each['date'].month == i+1: 
+				values[i] += each['price']
+				total += each['price']
+	#data4 is a list of dictionaries
+	#each result is a dicitonary with attributes as keys 
 	colors = []
 
 	return render_template('home_customer.html', email=email, flights=data1, \
 		title="Your past year spendings", max=10000, labels=labels, values=values, \
-			set=zip(values,labels, colors))
+			total=total, set=zip(values,labels, colors))
 
 #search flights page 
 @app.route('/flights')
