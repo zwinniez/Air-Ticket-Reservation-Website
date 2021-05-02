@@ -1,0 +1,52 @@
+<html>
+<head>
+</head>
+<body>
+	<style type="text/css">
+		table, th, td{
+			border: 1px solid rgb(31, 0, 143);
+		}
+		.hide {
+		display: none;
+		}
+	</style>
+{% if flights %}
+<!-- form needs ticket ID, price -->
+	<h1>Purchase Ticket Information</h1>
+	<table>
+        <th>Airline</th>
+		<th>Flight Number</th>
+		<th>Departure Time</th>
+		<th>Arrival Time</th>
+		<th>Ticket ID</th>
+		<th>Status</th>
+		<th>Price</th>
+		<td>Select</td>
+
+	{% for line in flights %}
+		<tr>
+			<form action='/confirming_purchase_C' method = 'POST'>
+				<td>{{line['name']}}</td>
+				<td>{{line['flight_num']}}</td>
+				<td>{{line['departure_date_and_time']}}</td>
+				<td>{{line['arrival_date_and_time']}}</td>
+				<input class = 'hide' name= "ticket_ID" type = "text" value = "{{line['ticket_ID']}}" readonly>
+				<td>{{line['ticket_ID']}}</td>
+				<td>{{line['status']}}</td>
+				<input class = 'hide' name ='sold_price' type = 'text' value = "{{line['sold_price']}}" readonly>
+				<td>{{line['sold_price']}}</td>
+				<td><button type = 'submit'>BUY</button></td>
+			</form>
+		</tr>
+	{% endfor %}
+	</table>
+
+{% endif %}
+
+<a href ='/home_customer'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+</html>

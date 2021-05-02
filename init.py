@@ -278,11 +278,61 @@ def purchase_ticket_C():
 	email = session['email']
 	flight_num = request.form['flight_num']
 	departure = request.form['departure_date_and_time']
-	print(flight_num, departure)
-	return redirect(url_for('home_customer'))
+	cursor = conn.cursor()
+	query = "SELECT * FROM flight natural join reserve as f, ticket as t\
+		 WHERE t.ticket_ID = f.ticket_ID and \
+		 f.flight_num = %s and departure_date_and_time = %s \
+		and card_type is NULL"
+		#all available flights queried
+	cursor.execute(query, (flight_num, departure))
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('purchase_ticket_customer.html', flights = data, email=email)
 
-@app.route('/purchase_date_range_C', methods=['GET', 'POST'])
-def purchase_date_range_C():
+@app.route('/confirming_purchase_C', methods=["GET", "POST"])
+def confirming_purchase_C():
+	email = session['email']
+	ticket_ID = request.form['ticket_ID']
+	sold_price = request.form['sold_price']
+	return render_template("payment_customer.html", email=email, ticket_ID = ticket_ID, sold_price = sold_price)
+
+@app.route('/payment_info_C', methods=["GET", "POST"])
+def payment_info_C():
+	# ticketID, sold_price, card_number, card_type, name, date
+	# update ticket table with card information 
+	# insert into purchase table 
+	email = session['email']
+	ticket_ID = request.form['ticket_ID']
+	sold_price = request.form['sold_price'] #not used for queries, only used to display price to customer
+	card_type = request.form['card_type']
+	card_number = request.form['card_number']
+	name = request.form['name']
+	expiration_date = request.form['expiration_date']
+	cursor = conn.cursor()
+	query = "UPDATE ticket SET card_type = %s, card_number = %s, name = %s, expiration_date = %s, purhcase_date_and_time = (select NOW())\
+		where ticket_ID = %s"
+	cursor.execute(query, (card_type, card_number, name, expiration_date, ticket_ID))
+	conn.commit()
+	cursor.close()
+	card_type = request.form['card_type']
+	card_number = request.form['card_number']
+	name = request.form['name']
+	expiration_date = request.form['expiration_date']
+	cursor = conn.cursor()
+	query = "INSERT INTO purchase values(%s, %s, NULL, NULL, NULL, NULL)"
+	cursor.execute(query, (ticket_ID, email))
+	conn.commit()
+	cursor.close()
+	return redirect(url_for("confirmed_customer_purchase"))
+
+
+@app.route('/confirmed_customer_purchase')
+def confirmed_customer_purchase():
+	email = session['email']
+	render_template("confirmed_customer_purchase.html", email = email)
+
+@app.route('/purchased_date_range_C', methods=['GET', 'POST'])
+def purchased_date_range_C():
 	email = session['email']
 	begin = request.form['begin']
 	end = request.form['end']
@@ -357,7 +407,7 @@ def search_flights():
 	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 		 (name = %s or city = %s) and flight_num in \
 			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
-	cursor.execute(query, (departure, departure, arrival, arrival))
+	cursor.execute(query, (arrival, arrival, departure, departure))
 	data2 = cursor.fetchall()
 	cursor.close()
 	year = departure_date[0:4]
@@ -368,11 +418,14 @@ def search_flights():
 			result.append(each)
 	session['departure_searches'] = result
 	if return_date is not None:
+		# print("HIIIII")
+		# print(return_date)
+		# print("HIIIII")
 		cursor = conn.cursor();
 		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 			(name = %s or city = %s) and flight_num in \
 				(select flight_num FROM airport natural join departure where name = %s or city = %s)'
-		cursor.execute(query, (arrival, arrival, departure, departure))
+		cursor.execute(query, (departure, departure, arrival, arrival))
 		data2 = cursor.fetchall()
 		cursor.close()
 		year = departure_date[0:4]

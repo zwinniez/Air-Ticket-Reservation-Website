@@ -16,7 +16,7 @@
 	<table>
 		<th>Flight Number</th>
 		<th>Departure Time</th>
-		<th>Tickets</th>
+		<th>Available Tickets</th>
 
 	{% for line in departure_searches %}
 		<tr>
@@ -25,7 +25,7 @@
 				<td>{{line['flight_num']}}</td>
 				<input class = 'hide' name= "departure_date_and_time" type = "text" value = "{{line['departure_date_and_time']}}" readonly>
 				<td>{{line['departure_date_and_time']}}</td>
-				<td><button type = 'submit'>Available</button></td>
+				<td><button type = 'submit'>Purchase</button></td>
 			</form>
 		</tr>
 	{% endfor %}

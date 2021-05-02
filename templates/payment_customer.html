@@ -1,0 +1,38 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+    .hide {
+        display: none;
+    }
+</style>
+
+<h4>{{ticket_ID}}</h4>
+<h4>{{sold_price}}</h4>
+
+<form action = "payment_info_C" method = "POST">
+    <h1>Payment Information</h1>
+    <input class = 'hide' name= "ticket_ID" type = "text" value = "{{ticket_ID}}" readonly>
+    <input class = 'hide' name= "sold_price" type = "text" value = "{{sold_price}}" readonly>
+    <label>Card Type</label>
+    <input type="text" name = "card_type" placeholder="MasterCard" required/></br>
+    <label>Card Number</label>
+    <input type="text" name = "card_number" placeholder="XXXX-XXXX-XXXX-XXXX" required/></br>
+    <label>Name on Card</label>
+    <input type="text" name = "name" placeholder="Johnny Appleseed" required/></br>
+    <label>Expiration Date</label>
+    <input type="date" name = "expiration_date" required/></br>
+    <button type = 'submit'>Confirm</button>
+</form>
+<a href ='/home_customer'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>
