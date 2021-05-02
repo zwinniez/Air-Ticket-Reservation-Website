@@ -1,6 +1,7 @@
 #Import Flask Library
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
+import json
 
 #Initialize the app from Flask
 app = Flask(__name__)
@@ -231,36 +232,73 @@ def registerAuth_airline_staff():
 @app.route('/home_customer')
 def home_customer():
 	email = session['email']
-	cursor = conn.cursor();
+	cursor = conn.cursor()
 	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
 		FROM purchase natural join reserve natural join flight WHERE c_email = %s'
 	cursor.execute(query, (email))
-	data1 = cursor.fetchall() 
+	data1 = cursor.fetchall()
+	
 	cursor.close()
-
 	months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-	cursor = conn.cursor();
-	query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
-		 WHERE email = %s and (select now()) - purhcase_date_and_time > 1" #fix mispelling in db
-	cursor.execute(query, (email))
-	data4= cursor.fetchall()
-	cursor.close()
 	labels = [each for each in months]
 	values = [0 for i in range(12)]
 	total = 0
-	for i in range(12):
-		for each in data4:
-			if each['date'].month == i+1: 
-				values[i] += each['price']
-				total += each['price']
-	#data4 is a list of dictionaries
-	#each result is a dicitonary with attributes as keys 
 	colors = []
-
+	if 'prices' not in session: #default bar graph
+		cursor = conn.cursor()
+		query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
+			WHERE email = %s and (select now()) - purhcase_date_and_time > 1" #fix mispelling in db
+		cursor.execute(query, (email))
+		data4= cursor.fetchall()
+		cursor.close()
+		#data4 is a list of dictionaries
+		#each result is a dicitonary with attributes as keys 
+		for i in range(12):
+			for each in data4:
+				if each['date'].month == i+1: 
+					values[i] += each['price']
+					total += each['price']
+	else: #with custom range
+		prices = session['prices'].strip().split(' ')
+		dates = session['dates'].strip(',').split(',')
+		for i in range(12):
+			for j in range(len(prices)):
+				date = dates[j].split()[0]
+				month = int(date.split("-")[1])
+				if month == i+1:
+					values[i] += float(prices[j])
+					total += float(prices[j])
+				
 	return render_template('home_customer.html', email=email, flights=data1, \
-		title="Your past year spendings", max=10000, labels=labels, values=values, \
-			total=total, set=zip(values,labels, colors))
+		title="Summary of past spendings", max=10000, labels=labels, values=values, \
+			total=total, set=zip(values,labels, colors), default_range="past year")
+		
+@app.route('/purchase_ticket_C', methods=["GET", "POST"])
+def purchase_ticket_C():
+	email = session['email']
+	flight_num = request.form['flight_num']
+	departure = request.form['departure_date_and_time']
+	print(flight_num, departure)
+	return redirect(url_for('home_customer'))
 
+@app.route('/purchase_date_range_C', methods=['GET', 'POST'])
+def purchase_date_range_C():
+	email = session['email']
+	begin = request.form['begin']
+	end = request.form['end']
+	cursor = conn.cursor()
+	query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
+		 WHERE email = %s and (%s >purhcase_date_and_time and purhcase_date_and_time > %s) "
+	cursor.execute(query,(email, end, begin))
+	data = cursor.fetchall()
+	cursor.close()
+	session['prices'] = ''
+	session['dates'] = ''
+	for result in data:
+		session['prices'] += str(result['price']) + ' '
+		session['dates'] += str(result['date']) + ','
+	return redirect(url_for('home_customer'))
+	
 #search flights page 
 @app.route('/flights')
 def flights():
@@ -283,7 +321,7 @@ def flights_booking_agent():
 def flight_status():
 	email = session['email']
 	statuses = session['statuses']
-	return render_template('flight_status.html', email=email, statuses=statuses)
+	return render_template('flight_status_customer.html', email=email, statuses=statuses)
 
 @app.route('/flight_status_booking_agent')
 def flight_status_booking_agent():
@@ -311,7 +349,6 @@ def search_status():
 @app.route('/search_flights', methods=['GET', 'POST'])
 def search_flights():
 	email = session['email']
-	print(request.form)
 	departure = request.form['departure'].lower()
 	arrival = request.form['arrival'].lower()
 	departure_date = request.form['departure_date']
@@ -319,22 +356,32 @@ def search_flights():
 	cursor = conn.cursor();
 	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 		 (name = %s or city = %s) and flight_num in \
-			 (select flight_num FROM airport natural join departure where name = %s or city = %s)\
-				 and departure_date_and_time = %s'
-	cursor.execute(query, (departure, departure, arrival, arrival, departure_date))
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
+	cursor.execute(query, (departure, departure, arrival, arrival))
 	data2 = cursor.fetchall()
 	cursor.close()
-	session['departure_searches'] = data2
+	year = departure_date[0:4]
+	month = departure_date[5:7]
+	result = []
+	for each in data2:
+		if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
+			result.append(each)
+	session['departure_searches'] = result
 	if return_date is not None:
 		cursor = conn.cursor();
 		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 			(name = %s or city = %s) and flight_num in \
-				(select flight_num FROM airport natural join departure where name = %s or city = %s)\
-					and departure_date_and_time = %s'
-		cursor.execute(query, (arrival, arrival, departure, departure, return_date))
+				(select flight_num FROM airport natural join departure where name = %s or city = %s)'
+		cursor.execute(query, (arrival, arrival, departure, departure))
 		data2 = cursor.fetchall()
 		cursor.close()
-		session['return_searches'] = data2
+		year = departure_date[0:4]
+		month = departure_date[5:7]
+		result = []
+		for each in data2:
+			if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
+				result.append(each)
+		session['return_searches'] = result
 	return redirect(url_for('flights'))
 
 @app.route('/search_status_BA', methods=['GET', 'POST'])
@@ -358,7 +405,6 @@ def search_status_BA():
 @app.route('/search_flights_BA', methods=['GET', 'POST'])
 def search_flights_BA():
 	email = session['email']
-	print(request.form)
 	departure = request.form['departure'].lower()
 	arrival = request.form['arrival'].lower()
 	departure_date = request.form['departure_date']
@@ -366,22 +412,32 @@ def search_flights_BA():
 	cursor = conn.cursor();
 	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 		 (name = %s or city = %s) and flight_num in \
-			 (select flight_num FROM airport natural join departure where name = %s or city = %s)\
-				 and departure_date_and_time = %s'
-	cursor.execute(query, (departure, departure, arrival, arrival, departure_date))
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
+	cursor.execute(query, (departure, departure, arrival, arrival))
 	data2 = cursor.fetchall()
 	cursor.close()
-	session['departure_searches'] = data2
+	year = departure_date[0:4]
+	month = departure_date[5:7]
+	result = []
+	for each in data2:
+		if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
+			result.append(each)
+	session['departure_searches'] = result
 	if return_date is not None:
 		cursor = conn.cursor();
 		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 			(name = %s or city = %s) and flight_num in \
-				(select flight_num FROM airport natural join departure where name = %s or city = %s)\
-					and departure_date_and_time = %s'
-		cursor.execute(query, (arrival, arrival, departure, departure, return_date))
+				(select flight_num FROM airport natural join departure where name = %s or city = %s)'
+		cursor.execute(query, (arrival, arrival, departure, departure))
 		data2 = cursor.fetchall()
 		cursor.close()
-		session['return_searches'] = data2
+		year = departure_date[0:4]
+		month = departure_date[5:7]
+		result = []
+		for each in data2:
+			if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
+				result.append(each)
+		session['return_searches'] = result
 	return redirect(url_for('flights_booking_agent'))
 
 #home page for booking agent 
@@ -428,6 +484,8 @@ def logout():
 	session.pop('departure_searches')
 	session.pop('return_searches')
 	session.pop('statuses')
+	session.pop('prices')
+	session.pop('dates')
 	##logout all session variables TODO 
 	return redirect('/')
 	

@@ -5,3 +5,7 @@ body {
     background-color: pink;
     color: rgb(179, 66, 66);
 }
+
+.hide {
+    display: none;
+}

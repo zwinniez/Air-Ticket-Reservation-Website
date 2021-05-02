@@ -2,23 +2,31 @@
 <head>
 </head>
 <body>
-<h1>Welcome {{email}}</h1>
+<h2>Welcome {{email}}</h2>
 <h2>Search for available flights</h2>
 <form action="/search_flights" method="POST">
-	
+	<label>Departure Airline/City</label>
 	<input type="text" name = "departure" placeholder="departure point" required/> </br>
+	<label>Arrival Airline/City</label>
 	<input type="text" name = "arrival" placeholder="arrival destination" required/> </br>
-	<input type="text" name = "departure_date" placeholder="departure date" required/> </br>
-	<input type="text" name = "return_date" placeholder="return date"/> </br>
+	<label>Departure Date</label>
+	<input type="date" name = "departure_date" placeholder="departure date" required/> </br>
+	<label>Return Date</label>
+	<input type="date" name = "return_date" placeholder="return date"/> 
+	<label>optional (for round trips)</label></br>
 	<input type="submit" value = Search />
 </form>
 
 <h2>Search for flight statuses</h2>
 <form action="/search_status" method="POST">
-	<input type="text" name = "airline_name" placeholder="Airline Name" required/> </br>
-	<input type="text" name = "flight_num" placeholder="Flight #" required/> </br>
-	<input type="text" name = "departure_date" placeholder="departure date" /> </br>
-	<input type="text" name = "arrival_date" placeholder="arrival date" /> </br>
+	<label>Airline</label>
+	<input type="text" name = "airline_name" placeholder="China Eastern" required/> </br>
+	<label>Flight Number</label>
+	<input type="text" name = "flight_num" placeholder="A1234567" required/> </br>
+	<label>Departure Date</label>
+	<input type="datetime-local" name = "departure_date" placeholder="departure date" /> </br>
+	<label>Arrival Date</label>
+	<input type="datetime-local" name = "arrival_date" placeholder="arrival date" /> </br>
 	<input type="submit" value = Search />
 </form>
 <br>
@@ -44,8 +52,20 @@
 </table>
 <br>
 <br>
-<h3>Total Spending in the Past Year: {{total}}</h3>
+<h3>Search for past purchases</h3>
+<form action="/purchase_date_range_C" method = "POST">
+	<label>Begin Date</label>
+	<input type="datetime-local" name = "begin" placeholder="YYYY-MM-DD" required/> </br>
+	<label>End Date</label>
+	<input type="datetime-local" name = "end" placeholder="YYYY-MM-DD" required/>  </br>
+	<input type="submit" value = Search />
+</form>
+
+</form>
+<br>
+
 <h2>{{title}}</h2>
+<h3>Total Spending in the range {{default_range}}: {{total}}</h3>
 <script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
 
 <canvas id="chart" width="600" heigh="500"></canvas>
