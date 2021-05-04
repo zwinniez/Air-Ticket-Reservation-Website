@@ -11,13 +11,16 @@
     }
 </style>
 
-<h4>{{ticket_ID}}</h4>
-<h4>{{sold_price}}</h4>
 
-<form action = "/payment_info_C" method = "POST">
+<h4>Ticket ID: {{ticket_ID}}</h4>
+<h4>Price: {{sold_price}}</h4>
+
+<form action = "/payment_info_BA" method = "POST">
     <h1>Payment Information</h1>
     <input class = 'hide' name= "ticket_ID" type = "text" value = "{{ticket_ID}}" readonly>
     <input class = 'hide' name= "sold_price" type = "text" value = "{{sold_price}}" readonly>
+    <label>Customer's email</label>
+    <input type="email" name = "c_email" placeholder="frozenletter@hotmail.com"><br>
     <label>Card Type</label>
     <input type="text" name = "card_type" placeholder="MasterCard" required/></br>
     <label>Card Number</label>
@@ -28,7 +31,7 @@
     <input type="date" name = "expiration_date" required/></br>
     <button type = 'submit'>Confirm</button>
 </form>
-<a href ='/home_customer'>Go Back</a>
+<a href ='/home_booking_agent'>Go Back</a>
 
 <a href="/logout">Logout</a>
 

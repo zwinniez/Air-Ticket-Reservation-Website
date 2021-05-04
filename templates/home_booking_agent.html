@@ -5,22 +5,32 @@
 <h1>Welcome {{email}}</h1>
 <h2>Search for available flights</h2>
 <form action="/search_flights_BA" method="POST">
+	<label>Departure Airline/City</label>
 	<input type="text" name = "departure" placeholder="departure point" required/> </br>
+	<label>Arrival Airline/City</label>
 	<input type="text" name = "arrival" placeholder="arrival destination" required/> </br>
-	<input type="text" name = "departure_date" placeholder="departure date" required/> </br>
-	<input type="text" name = "return_date" placeholder="return date"/> </br>
+	<label>Departure Date</label>
+	<input type="date" name = "departure_date" placeholder="departure date" required/> </br>
+	<label>Return Date</label>
+	<input type="date" name = "return_date" placeholder="return date"/> 
+	<label>optional (for round trips)</label></br>
 	<input type="submit" value = Search />
 </form>
 
 <h2>Search for flight statuses</h2>
 <form action="/search_status_BA" method="POST">
-	<input type="text" name = "airline_name" placeholder="Airline Name" required/> </br>
-	<input type="text" name = "flight_num" placeholder="Flight #" required/> </br>
-	<input type="text" name = "departure_date" placeholder="departure date" /> </br>
-	<input type="text" name = "arrival_date" placeholder="arrival date" /> </br>
+	<label>Airline</label>
+	<input type="text" name = "airline_name" placeholder="China Eastern" required/> </br>
+	<label>Flight Number</label>
+	<input type="text" name = "flight_num" placeholder="A1234567" required/> </br>
+	<label>Departure Date</label>
+	<input type="datetime-local" name = "departure_date" placeholder="departure date" /> </br>
+	<label>Arrival Date</label>
+	<input type="datetime-local" name = "arrival_date" placeholder="arrival date" /> </br>
 	<input type="submit" value = Search />
 </form>
 
+<h2>Booked Flights</h2>
 <table>
 	<th>Time</th>
 	<th>Flight Number</th>
@@ -39,6 +49,12 @@
 	</tr>
 {% endfor %}
 </table>
+
+<h2>Earnings</h2>
+<h3>Commission: {{commission}}</h3>
+<h3>Total Tickets booked: {{tickets}} </h3>
+<h3>Average Commission: {{avg_commission}}</h3>
+
 
 <a href="/logout">Logout</a>
 

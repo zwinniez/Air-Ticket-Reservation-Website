@@ -25,7 +25,7 @@
 
 	{% for line in flights %}
 		<tr>
-			<form action='/inserting_purchase_C' method = 'POST'>
+			<form action='/confirming_purchase_BA' method = 'POST'>
 				<td>{{line['name']}}</td>
 				<td>{{line['flight_num']}}</td>
 				<td>{{line['departure_date_and_time']}}</td>
@@ -43,7 +43,7 @@
 
 {% endif %}
 
-<a href ='/home_customer'>Go Back</a>
+<a href ='/home_booking_agent'>Go Back</a>
 
 <a href="/logout">Logout</a>
 

@@ -1,0 +1,35 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+    .hide {
+        display: none;
+    }
+</style>
+
+<h2>Hi {{email}}, please rate the following flight: </h2>
+<h2>Flight Number: {{flight_num}}</h2>
+
+<form action = "/inserting_rate_C" method = "POST">
+    <h3>Write a Review</h3>
+    <input class = 'hide' name= "flight_num" type = "text" value = "{{flight_num}}" readonly>
+    <input class = 'hide' name= "departure_date_and_time" type = "text" value = "{{departure_date_and_time}}" readonly>
+    <label>Comment</label><br>
+    <input type="text" name = "comment" placeholder="comment"/></br>
+    <label>Rate</label><br>
+    <input type="number" name = "rating" placeholder="1-5"/> </br> <br>
+    <button type = 'submit'>Confirm</button>
+</form>
+
+<a href ='/home_customer'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>

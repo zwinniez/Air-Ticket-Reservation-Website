@@ -4,7 +4,7 @@
 <body>
 <h2>Welcome {{email}}</h2>
 <h2>Search for available flights</h2>
-<form action="/search_flights" method="POST">
+<form action="/search_flights_C" method="POST">
 	<label>Departure Airline/City</label>
 	<input type="text" name = "departure" placeholder="departure point" required/> </br>
 	<label>Arrival Airline/City</label>
@@ -18,7 +18,7 @@
 </form>
 
 <h2>Search for flight statuses</h2>
-<form action="/search_status" method="POST">
+<form action="/search_status_C" method="POST">
 	<label>Airline</label>
 	<input type="text" name = "airline_name" placeholder="China Eastern" required/> </br>
 	<label>Flight Number</label>
@@ -31,7 +31,7 @@
 </form>
 <br>
 <br>
-<h2>Your booked flights</h2>
+<h2>Booked Flights</h2>
 <table>
 	<th>Time</th>
 	<th>Flight Number</th>
@@ -47,6 +47,33 @@
 		<td>{{line['arrival_date_and_time']}}</td>
 		<td>{{line['status']}}</td>
 
+	</tr>
+{% endfor %}
+</table>
+<br>
+<br>
+
+<h2>Past Flights</h2>
+<table>
+	<th>Time</th>
+	<th>Flight Number</th>
+	<th>Departure Time</th>
+	<th>Arrival Time</th>
+	<th>Status</th>
+	<th>Write a Review</th>
+
+{% for line in past_flights %}
+	<tr>
+		<form action="/rate_flight_C" method = "POST">
+			<td>{{line['name']}}</td>
+			<td>{{line['flight_num']}}</td>
+			<input class = hide type ="text" name = "flight_num" value = "{{line['flight_num']}}" readonly>
+			<td>{{line['departure_date_and_time']}}</td>
+			<input class = hide type="text" name="departure_date_and_time" value ="{{line['departure_date_and_time']}}" readonly>
+			<td>{{line['arrival_date_and_time']}}</td>
+			<td>{{line['status']}}</td>
+			<td><input type="submit" value = Comment/Rate></td>
+		</form>
 	</tr>
 {% endfor %}
 </table>
@@ -68,26 +95,21 @@
 <h3>Total Spending in the range {{default_range}}: {{total}}</h3>
 <script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
 
-<canvas id="chart" width="600" heigh="500"></canvas>
+<canvas id="chart" width="600" heigh="700"></canvas>
 	<script>
 		//bar chart data
 		var barData = {
-			labels : [
-				{% for item in labels %}
+			labels : [{% for item in labels %}
 				"{{item}}",
-				{% endfor %}
-			],
+				{% endfor %}],
 			datasets: [{
 				fillColor: "rgba(151,187,205,0.2)",
 				strokeColor: "rgba(151,187,205,1",
 				pointColor: "rgba(151,187,205,1)",
-				data: [
-					{% for item in values %}
+				data: [ {% for item in values %}
 					"{{item}}",
-					{% endfor %}
-				]
-			}
-		]
+					{% endfor %}]
+			}]
 		}
 	// get bar chart canvas
 	var mychart = document.getElementById("chart").getContext("2d");
@@ -116,6 +138,9 @@
 <style type="text/css">
 	table, th, td{
 		border: 1px solid rgb(31, 0, 143);
+	}
+	.hide {
+		display : none;
 	}
 </style>
 
