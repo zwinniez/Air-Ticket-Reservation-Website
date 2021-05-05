@@ -50,10 +50,101 @@
 {% endfor %}
 </table>
 
-<h2>Earnings</h2>
-<h3>Commission: {{commission}}</h3>
-<h3>Total Tickets booked: {{tickets}} </h3>
-<h3>Average Commission: {{avg_commission}}</h3>
+<h3>Custom Commission Range</h3>
+<form action="/earnings_date_range_BA" method = "POST">
+	<label>Begin Date</label>
+	<input type="datetime-local" name = "begin" placeholder="YYYY-MM-DD" required/> </br>
+	<label>End Date</label>
+	<input type="datetime-local" name = "end" placeholder="YYYY-MM-DD" required/>  </br>
+	<input type="submit" value = Search />
+</form>
+
+<h3>Earnings</h3>
+<h4>Commission: {{commission}}</h4>
+<h4>Total Tickets booked: {{tickets}} </h4>
+<h4>Average Commission: {{avg_commission}}</h4>
+
+<br>
+<h3>Top Five Customer Ticket Purchases in the Past Six Months</h3>
+<script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+
+<canvas id="chart1" width="600" height="250"></canvas>
+	<script>
+		//bar chart data
+		var barData = {
+			labels : [{% for customer in customers1 %}
+				"{{customer}}",
+				{% endfor %}],
+			datasets: [{
+				fillColor: "rgba(151,187,205,0.2)",
+				strokeColor: "rgba(151,187,205,1",
+				pointColor: "rgba(151,187,205,1)",
+				data: [ {% for number in ticket_count %}
+					"{{number}}",
+					{% endfor %}]
+			}]
+		}
+	// get bar chart canvas
+	var mychart = document.getElementById("chart1").getContext("2d");
+	steps = 5
+	max = {{max1}}
+
+	//draw bar chart 
+	new Chart(mychart).Bar(barData, {
+		scaleOverride: true,
+		scaleSteps: steps,
+		scaleStepWidth: Math.ceil(max/steps),
+		scaleStartValue: 0,
+		scaleShowVerticalLines: true,
+		scaleShowGrideLines: true,
+		barShowStroke: true,
+		scakeShowLabels: true
+	}
+	);
+
+</script>
+
+<h3>Top Five Customer Commissions in the Past Year</h3>
+<script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+
+<canvas id="chart2" width="600" height="250"></canvas>
+	<script>
+		//bar chart data
+		var barData = {
+			labels : [{% for customer in customers2 %}
+				"{{customer}}",
+				{% endfor %}],
+			datasets: [{
+				fillColor: "rgba(151,187,205,0.2)",
+				strokeColor: "rgba(151,187,205,1",
+				pointColor: "rgba(151,187,205,1)",
+				data: [ {% for commission in commissions %}
+					"{{commission}}",
+					{% endfor %}]
+			}]
+		}
+	// get bar chart canvas
+	var mychart = document.getElementById("chart2").getContext("2d");
+	steps = 10
+	max = {{max2}}
+
+	//draw bar chart 
+	new Chart(mychart).Bar(barData, {
+		scaleOverride: true,
+		scaleSteps: steps,
+		scaleStepWidth: Math.ceil(max/steps),
+		scaleStartValue: 0,
+		scaleShowVerticalLines: true,
+		scaleShowGrideLines: true,
+		barShowStroke: true,
+		scakeShowLabels: true
+	}
+	);
+
+</script>
+
+
+
 
 
 <a href="/logout">Logout</a>

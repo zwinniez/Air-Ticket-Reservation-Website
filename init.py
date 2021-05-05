@@ -292,7 +292,9 @@ def home_customer():
 	if 'prices' not in session: #default bar graph
 		cursor = conn.cursor()
 		query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
-			WHERE email = %s and (select now()) - purhcase_date_and_time > 1" #fix mispelling in db
+			WHERE email = %s and ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
+						GROUP BY c_email ORDER BY tickets DESC)" #fix mispelling in db
 		cursor.execute(query, (email))
 		data4= cursor.fetchall()
 		cursor.close()
@@ -313,7 +315,6 @@ def home_customer():
 				if month == i+1:
 					values[i] += float(prices[j])
 					total += float(prices[j])
-	# -------------------------------------------------bar graph---------------------------------------
 
 	return render_template('home_customer.html', email=email, flights=data1, past_flights=data2, \
 		title="Summary of past spendings", max=10000, labels=labels, values=values, \
@@ -327,23 +328,111 @@ def home_booking_agent():
 	# ---------------------------------------display purchased tickets-----------------------------------------
 	cursor = conn.cursor()
 	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
-		FROM purchase natural join reserve natural join flight WHERE b_email = %s'
-	cursor.execute(query, (email))
+		FROM purchase natural join reserve natural join flight WHERE b_email = %s and booking_agent_ID = %s'
+	cursor.execute(query, (email, ID))
 	data1 = cursor.fetchall() 
 	cursor.close()
+	tickets = 0 
+	earning = 0 
 	# ---------------------------------------display earnings default 30 days ------------------------------------
+	if 'custom_earnings' not in session:
+		cursor = conn.cursor()
+		query = "SELECT (sold_price * commission / 100) as profit FROM purchase natural join ticket where b_email = %s\
+			and booking_agent_ID = %s and \
+				((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 365 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time)) * 30  + \
+						day(CURRENT_TIMESTAMP) - day(purhcase_date_and_time)) <= 30"
+		cursor.execute(query, (email,ID))
+		prices= cursor.fetchall()
+		cursor.close()
+		for each in prices:
+			tickets += 1
+			earning += each['profit']
+	#------------------------------------------display custom default 30 day earnings -----------------------------
+	else: #with custom range
+		prices = session['custom_earnings'].strip().split(' ')
+		for each in prices:
+			tickets += 1
+			earning += float(each)
+			print(each)
+	avg_commission = round(earning/tickets,2) if tickets != 0 else 0
+	#-----------------------------------------bar graph for TOP FIVE CUSTOMERS--------------------------------
+	customers1 = [] #five top customer emails
+	ticket_count = [] 
+	colors = []
 	cursor = conn.cursor()
-	query = "SELECT (sold_price * commission / 100) as profit FROM purchase natural join ticket where b_email = %s\
-		and booking_agent_ID = %s"
-	cursor.execute(query, (email,ID))
-	data2= cursor.fetchall()
+	query = "SELECT count(ticket_ID) as tickets, c_email FROM ticket natural join purchase\
+			WHERE b_email = %s and booking_agent_ID = %s and \
+				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 6 \
+						GROUP BY c_email ORDER BY tickets DESC" 
+	cursor.execute(query, (email, ID))
+	data= cursor.fetchall()
 	cursor.close()
-	tickets = 0
-	earning = 0
-	for each in data2:
-		tickets += 1
-		earning += each['profit']
-	return render_template('home_booking_agent.html', email=email, flights=data1, commission=round(earning,2), tickets = tickets, avg_commission = round(earning/tickets,2))
+	if len(data) >= 5: 
+		cursor = conn.cursor()
+		query = "SELECT TOP 5 * from (SELECT count(ticket_ID) as tickets, c_email FROM ticket natural join purchase\
+			WHERE b_email = %s and booking_agent_ID = %s and \
+				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 6 \
+						GROUP BY c_email ORDER BY tickets DESC)"
+		cursor.execute(query, (email, ID))
+		data = cursor.fecthall()
+		cursor.close()
+	for each in data:
+		customers1.append(each['c_email'])
+		ticket_count.append(each['tickets'])
+		print(ticket_count, "HIII"*100)
+
+	#-----------------------------------------bar graph for TOP FIVE COMMISSION--------------------------------------
+	customers2 = [] #five top customer emails
+	commissions = [] 
+	colors = []
+	cursor = conn.cursor()
+	query = "SELECT sum(sold_price * commission / 100) as profit, c_email FROM ticket natural join purchase\
+			WHERE b_email = %s and booking_agent_ID = %s and \
+				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
+						GROUP BY c_email ORDER BY profit DESC"
+	cursor.execute(query, (email, ID))
+	data= cursor.fetchall()
+	cursor.close()
+	if len(data) >= 5: 
+		cursor = conn.cursor()
+		query = "SELECT TOP 5 * (SELECT sum(sold_price * commission / 100) as profit, c_email FROM ticket natural join purchase\
+			WHERE b_email = %s and booking_agent_ID = %s and \
+				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
+						GROUP BY c_email ORDER BY profit DESC"
+		cursor.execute(query, (email, ID))
+		data = cursor.fecthall()
+		cursor.close()
+	for each in data:
+		customers2.append(each['c_email'])
+		commissions.append(round(each['profit'],2))
+		print(each)
+	return render_template('home_booking_agent.html', email=email, flights=data1, commission=round(earning,2), \
+		tickets = tickets, max1 = 5, avg_commission = avg_commission, ticket_count = ticket_count, customers1 = customers1,\
+			customers2 = customers2, commissions = commissions, max2 = 1000)
+
+#----------------------------custom range BOOKING AGENT bar graph of past purchases---------------------------------
+#-------------queries all past purchase with customized date range and redirected to home CUSTOMER page--------
+@app.route('/earnings_date_range_BA', methods=['GET', 'POST'])
+def earnings_date_range_BA():
+	email = session['email']
+	ID = session['ID']
+	begin = request.form['begin']
+	end = request.form['end']
+	cursor = conn.cursor()
+	query = "SELECT sold_price as price FROM ticket natural join purchase\
+		 WHERE b_email = %s and booking_agent_ID = %s and (%s >purhcase_date_and_time and purhcase_date_and_time > %s) "
+	cursor.execute(query,(email, ID, end, begin))
+	data = cursor.fetchall()
+	cursor.close()
+	session['custom_earnings'] = ''
+	for result in data:
+		session['custom_earnings'] += str(result['price']) + ' '
+	return redirect(url_for('home_booking_agent'))
 
 #renders purchase ticket page for CUSTOMER --> queries all available flights from search bar on flights_customer.html
 @app.route('/purchase_ticket_C', methods=["GET", "POST"])
