@@ -1,0 +1,52 @@
+<html>
+<head>
+	<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+	.hide {
+    display: none;
+	}
+</style>
+{% if departure_searches %}
+	<h1>Departure Flights</h1>
+	<table>
+		<th>Flight Number</th>
+		<th>Departure Time</th>
+
+	{% for line in departure_searches %}
+		<tr>
+			<td>{{line['flight_num']}}</td>
+			<td>{{line['departure_date_and_time']}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+{% if return_searches %}
+	<h1>Return Flights</h1>
+	<table>
+		<th>Flight Number</th>
+		<th>Departure Time</th>
+		<th>Tickets</th>
+
+	{% for line in return_searches %}
+		<tr>
+			<td>{{line['flight_num']}}</td>
+			<td>{{line['departure_date_and_time']}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+<a href ='/home_airline_staff'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>

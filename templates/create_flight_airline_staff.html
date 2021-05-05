@@ -1,0 +1,33 @@
+<html>
+<head \>
+</head>
+<body style = "background-color:rgb(230, 144, 187); text-align:center" >
+<form action="/create_new_flight_AS" method="POST">
+    <h1>Create New Flight for {{name}}</h1>
+    <label>Flight Number</label>
+	<input type="text" name = "flight_num" placeholder="A11111111" required/></br>
+    <label>Departure Date and Time</label>
+	<input type="datetime-local" name = "departure_date_and_time" placeholder="XXXX-XX-XX XX:XX:XX" required/></br>
+    <label>Arrival Date and Time</label>
+	<input type="datetime-local" name = "arrival_date_and_time" placeholder="XXXX-XX-XX XX:XX:XX" required/></br>
+	<label>Base Price</label>
+	<input type="number" name = "base_price" placeholder="XXX.XX" required/></br>
+    <label>Airplane ID#</label>
+	<input type="number" name = "ID_num" placeholder="XXXXXXXXXXXXXXX" required/></br>
+    <label>Departure Airport</label>
+    <input type="text" name = "departure" placeholder="JFK" required/></br>
+    <label>Arrival Airport</label>
+    <input type="text" name = "arrival" placeholder="PVG" required/></br>
+    <label>Status</label>
+    <select  name="status">
+        <option value="on time">on time</option>
+        <option value="delayed">delayed</option>
+    </select>
+	<input type="submit" value = Confirm />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/">Go back</a>
+</body>
+</html>

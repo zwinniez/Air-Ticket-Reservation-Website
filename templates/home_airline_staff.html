@@ -2,33 +2,50 @@
 <head>
 </head>
 <body>
-<form action="/post" method="POST">
-	<h1>Welcome {{username}}</h1>
-	<input type="text" name = "blog" placeholder="post" required/> </br>
-	<input type="submit" value = Post />
+<h2>Welcome {{username}}</h2>
+
+
+<a href='/create_flight_page'>Create new Flight </a>
+
+<h2>Search for available flights</h2>
+<form action="/search_flights_AS" method="POST">
+	<label>Departure Airline/City</label>
+	<input type="text" name = "departure" placeholder="departure point" required/> </br>
+	<label>Arrival Airline/City</label>
+	<input type="text" name = "arrival" placeholder="arrival destination" required/> </br>
+	<label>Departure Date</label>
+	<input type="date" name = "departure_date" placeholder="departure date" required/> </br>
+	<label>Return Date</label>
+	<input type="date" name = "return_date" placeholder="return date"/> 
+	<label>optional (for round trips)</label></br>
+	<input type="submit" value = Search />
 </form>
 
-<style type="text/css">
-	table, th, td{
-		border: 1px solid black;
-	}
-</style>
-
-<table>
-	<th>Time</th>
-	<th>Post</th>
-
-{% for line in posts %}
-	<tr>
-		<td>{{line['ts']}}</td>
-		<td>{{line['blog_post']}}</td>
-	</tr>
-{% endfor %}
-</table>
+<h2>Search for flight statuses</h2>
+<form action="/search_status_AS" method="POST">
+	<label>Airline</label>
+	<input type="text" name = "airline_name" placeholder="China Eastern" required/> </br>
+	<label>Flight Number</label>
+	<input type="text" name = "flight_num" placeholder="A1234567" required/> </br>
+	<label>Departure Date</label>
+	<input type="datetime-local" name = "departure_date" placeholder="departure date" /> </br>
+	<label>Arrival Date</label>
+	<input type="datetime-local" name = "arrival_date" placeholder="arrival date" /> </br>
+	<input type="submit" value = Search />
+</form>
+<br>
 
 <a href="/logout">Logout</a>
 
 </body>
 
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+	.hide {
+		display : none;
+	}
+</style>
 
 </html>

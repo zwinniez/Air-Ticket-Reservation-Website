@@ -1,0 +1,49 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+    .hide{
+        display:none;
+    }
+</style>
+{% if statuses %}
+	<h1>Flight Statuses</h1>
+	<table>
+        <th>Airline</th>
+		<th>Flight Number</th>
+		<th>Current Status</th>
+        <th>Change Status</th>
+
+	{% for line in statuses %}
+		<tr>
+            <form action = '/update_flight_status_AS' method = 'POST'>
+                <input class = 'hide' name= "name" type = "text" value = "{{line['name']}}" readonly>
+                <td>{{line['name']}}</td>
+                <input class = 'hide' name= "flight_num" type = "text" value = "{{line['flight_num']}}" readonly>
+                <td>{{line['flight_num']}}</td>
+                <input class = 'hide' name= "departure_date_and_time" type = "text" value = "{{line['departure_date_and_time']}}" readonly>
+                <td>{{line['status']}}</td>
+                <td><select  name="status">
+                    <option value="on time">on time</option>
+                    <option value="delayed">delayed</option>
+                  </select>
+                </td>
+                <td><button type = 'submit'>Update</button></td>
+        </form>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+<a href ='/home_airline_staff'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>
