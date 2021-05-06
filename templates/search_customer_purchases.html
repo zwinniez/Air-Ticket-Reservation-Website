@@ -1,0 +1,31 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+</style>
+<h2>Purchases for {{name}} Airline for Customer {{c_email}}</h2>
+{% if customer_purchases %}
+	<table>
+        <th>Flight Number</th>
+
+	{% for line in customer_purchases %}
+		<tr>
+            <td>{{line['flight_num']}}</td>
+
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+<a href ='/home_airline_staff'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>

@@ -214,6 +214,7 @@ def registerAuth_airline_staff():
 	fname = request.form['first_name']
 	lname = request.form['last_name']
 	dob = request.form['date_of_birth']
+	name = request.form['name']
 
 	#cursor used to send queries
 	cursor = conn.cursor()
@@ -231,6 +232,11 @@ def registerAuth_airline_staff():
 	else:
 		ins = 'INSERT INTO airline_staff VALUES(%s, md5(%s), %s, %s, %s)'
 		cursor.execute(ins, (username, password, fname, lname, dob))
+		conn.commit()
+		cursor.close()
+		cursor = conn.cursor()
+		ins = "INSERT INTO works VALUES(%s, %s)"
+		cursor.execute(ins, (username, name))
 		conn.commit()
 		cursor.close()
 		return render_template('index.html')
@@ -368,24 +374,13 @@ def home_booking_agent():
 			WHERE b_email = %s and booking_agent_ID = %s and \
 				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
 					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 6 \
-						GROUP BY c_email ORDER BY tickets DESC" 
+						GROUP BY c_email ORDER BY tickets DESC LIMIT 5" 
 	cursor.execute(query, (email, ID))
 	data= cursor.fetchall()
 	cursor.close()
-	if len(data) >= 5: 
-		cursor = conn.cursor()
-		query = "SELECT TOP 5 * from (SELECT count(ticket_ID) as tickets, c_email FROM ticket natural join purchase\
-			WHERE b_email = %s and booking_agent_ID = %s and \
-				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
-					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 6 \
-						GROUP BY c_email ORDER BY tickets DESC)"
-		cursor.execute(query, (email, ID))
-		data = cursor.fecthall()
-		cursor.close()
 	for each in data:
 		customers1.append(each['c_email'])
 		ticket_count.append(each['tickets'])
-		print(ticket_count, "HIII"*100)
 
 	#-----------------------------------------bar graph for TOP FIVE COMMISSION--------------------------------------
 	customers2 = [] #five top customer emails
@@ -396,20 +391,10 @@ def home_booking_agent():
 			WHERE b_email = %s and booking_agent_ID = %s and \
 				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
 					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
-						GROUP BY c_email ORDER BY profit DESC"
+						GROUP BY c_email ORDER BY profit DESC LIMIT 5"
 	cursor.execute(query, (email, ID))
 	data= cursor.fetchall()
 	cursor.close()
-	if len(data) >= 5: 
-		cursor = conn.cursor()
-		query = "SELECT TOP 5 * (SELECT sum(sold_price * commission / 100) as profit, c_email FROM ticket natural join purchase\
-			WHERE b_email = %s and booking_agent_ID = %s and \
-				 ((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
-					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
-						GROUP BY c_email ORDER BY profit DESC"
-		cursor.execute(query, (email, ID))
-		data = cursor.fecthall()
-		cursor.close()
 	for each in data:
 		customers2.append(each['c_email'])
 		commissions.append(round(each['profit'],2))
@@ -431,7 +416,6 @@ def home_airline_staff():
 	cursor.execute(query, (username))
 	data1 = cursor.fetchall()
 	cursor.close()
-
 	# ---------------------------------------display past flights and comments ------------------------
 	cursor = conn.cursor()
 	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
@@ -440,8 +424,79 @@ def home_airline_staff():
 	cursor.execute(query, (username))
 	data2 = cursor.fetchall()
 	cursor.close()
+	#-------------------------------all booking agents------------------------------------------------
+	cursor = conn.cursor()
+	query = "Select email from booking_agent WHERE email is not NULL"
+	cursor.execute(query)
+	booking_agents1 = cursor.fetchall()
+	cursor.close()
+	#-----------------------------top five booking agents tickets past month---------------------------
+	cursor = conn.cursor()
+	query = "SELECT count(ticket_ID) as tickets, b_email, booking_agent_ID FROM ticket natural join purchase\
+				WHERE (b_email is not NULL) and \
+					((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 1 \
+						GROUP BY b_email, booking_agent_ID ORDER BY tickets DESC"
+	cursor.execute(query)
+	booking_agents2 = cursor.fetchall()
+	cursor.close()
+	#--------------------------top five booking agents tickets past year--------------------------------
+	cursor = conn.cursor()
+	query = "SELECT count(ticket_ID) as tickets, b_email, booking_agent_ID FROM ticket natural join purchase\
+			WHERE (b_email is not NULL) and \
+				((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
+						GROUP BY b_email, booking_agent_ID ORDER BY tickets DESC"
+	cursor.execute(query)
+	booking_agents3 = cursor.fetchall()
+	cursor.close()
+	#------------------------------top five booking agents commissions past year ----------------------------
+	cursor = conn.cursor()
+	query = "SELECT sum(sold_price * commission / 100) as profit, b_email, booking_agent_ID FROM ticket natural join purchase\
+			WHERE (b_email is not NULL) and \
+				((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
+						GROUP BY b_email, booking_agent_ID ORDER BY profit DESC"
+	cursor.execute(query)
+	booking_agents4 = cursor.fetchall()
+	cursor.close()
+	for each in booking_agents4:
+		each['profit'] = round(each['profit'], 2)
+	#---------------------------------most freq customer-------------------------------------------------------
+	cursor = conn.cursor()
+	query = "Select c_email from flight as f , reserve as r , ticket as t, purchase as p where \
+		f.flight_num = r.flight_num and f.name = %s and  r.ticket_ID = t.ticket_ID \
+			and t.ticket_ID = p.ticket_ID group by c_email order by count(t.ticket_ID) desc LIMIT 1"
+	cursor.execute(query, (name))
+	freq_customer = cursor.fetchone()
+	cursor.close()
 
-	return render_template('home_airline_staff.html', username = username, name=name)
+	return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
+		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, booking_agents4=booking_agents4)
+
+#searches up a particular customer's flights of specific airline of AIRLINE STAFF'S
+@app.route("/search_customer_purchases", methods=['GET', 'POST'])
+def search_customer_purchases():
+	name = session['name']
+	c_email = request.form['c_email']
+	cursor = conn.cursor()
+	query = "Select f.flight_num from flight as f , reserve as r , ticket as t, purchase as p\
+			where f.flight_num = r.flight_num and f.name = %s and r.ticket_ID = t.ticket_ID and \
+ 				t.ticket_ID = p.ticket_ID and p.c_email = %s"
+	cursor.execute(query, (name, c_email))
+	data = cursor.fetchall()
+	cursor.close()
+	session['customer_purchases'] = data
+	session['c_email'] = c_email
+	return redirect(url_for('search_customers'))
+
+#render tempplate for customer and their past flights with specific airline of AIRLINE STAFF's
+@app.route("/search_customers")
+def search_customers():
+	name = session['name']
+	customer_purchases = session['customer_purchases']
+	c_email = session['c_email']
+	return render_template('search_customer_purchases.html', name = name, customer_purchases = customer_purchases, c_email = c_email)
 
 #----------------------------custom range BOOKING AGENT bar graph of past purchases---------------------------------
 #-------------queries all past purchase with customized date range and redirected to home CUSTOMER page--------
@@ -662,7 +717,7 @@ def flight_status_airline_staff():
 @app.route('/search_status_C', methods=['GET', 'POST'])
 def search_status_C():
 	email = session['email']
-	airline_name = request.form['airline_name'].lower()
+	airline_name = request.form['airline_name']
 	flight_num = request.form['flight_num']
 	departure_date = request.form['departure_date']
 	arrival_date = request.form['arrival_date']
@@ -679,7 +734,7 @@ def search_status_C():
 @app.route('/search_status_BA', methods=['GET', 'POST'])
 def search_status_BA():
 	email = session['email']
-	airline_name = request.form['airline_name'].lower()
+	airline_name = request.form['airline_name']
 	flight_num = request.form['flight_num']
 	departure_date = request.form['departure_date']
 	arrival_date = request.form['arrival_date']
@@ -696,7 +751,7 @@ def search_status_BA():
 @app.route('/search_status_AS', methods=['GET', 'POST'])
 def search_status_AS():
 	username = session['username']
-	airline_name = request.form['airline_name'].lower()
+	airline_name = request.form['airline_name']
 	flight_num = request.form['flight_num']
 	departure_date = request.form['departure_date']
 	arrival_date = request.form['arrival_date']
@@ -719,10 +774,10 @@ def update_flight_status_AS():
 	status = request.form['status']
 	cursor = conn.cursor()
 	query = "UPDATE flight SET status = %s WHERE flight_num = %s and departure_date_and_time = %s and name = %s"
-	cursor.execute(query, (status, flight_num, departure_time, name))
+	cursor.execute(query, (status, flight_num, departure_time,name))
 	conn.commit()
 	cursor.close()
-	return redirect(url_for('flight_status_airline_staff'))
+	return redirect(url_for('home_airline_staff'))
 
 #create new flight page for AIRLINE STAFF
 @app.route('/create_flight_page')
@@ -731,10 +786,9 @@ def create_flight_page():
 	username = session['username']
 	return render_template('create_flight_airline_staff.html', username=username, name=name)
 
-
 #creates new flight for AIRLINE STAFF
-@app.route('/create_flight_airline_staff', methods=['GET','POST'])
-def create_flight_airline_staff():
+@app.route('/create_flight_AS', methods=['GET','POST'])
+def create_flight_AS():
 	name = session['name']
 	flight_num = request.form['flight_num']
 	departure_date_and_time=request.form['departure_date_and_time']
@@ -744,17 +798,17 @@ def create_flight_airline_staff():
 	departure = request.form['departure']
 	arrival = request.form['arrival']
 	ID_num = request.form['ID_num']
-
 	#--------------------------------------------INSERT INTO FLIGHT-------------------------------------------------
 	cursor = conn.cursor()
 	query = "insert into flight values(%s, %s, %s, %s, %s, %s)"
-	cursor.execute(query, (flight_num, departure__date_and_time, name, arrival_date_and_time, base_price, status))
+	cursor.execute(query, (flight_num, departure_date_and_time, name, arrival_date_and_time, base_price, status))
 	conn.commit()
 	cursor.close()
-	#------------------------------------------INSERT INTO HAS ----------------------------------------------------
+	#------------------------------------------INSERT INTO ARRIVAL------------------------------------------------
 	cursor = conn.cursor() 
-	query = "insert into has values(%s, %s, %s)"
-	cursor.execute(query, (flight_num, departure_date_and_time, ID_num))
+	query = "insert into arrival values(%s, %s, %s)"
+	print(arrival)
+	cursor.execute(query, (flight_num, departure_date_and_time, arrival))
 	conn.commit()
 	cursor.close()
 	#------------------------------------------INSERT INTO DEPARTURE------------------------------------------------
@@ -763,25 +817,77 @@ def create_flight_airline_staff():
 	cursor.execute(query, (flight_num, departure_date_and_time, departure))
 	conn.commit()
 	cursor.close()
-	#------------------------------------------INSERT INTO ARRIVAL------------------------------------------------
+	#------------------------------------------INSERT INTO HAS ----------------------------------------------------
 	cursor = conn.cursor() 
-	query = "insert into arrival values(%s, %s, %s)"
-	cursor.execute(query, (flight_num, arrival_date_and_time, arrival))
+	query = "insert into has values(%s, %s, %s)"
+	cursor.execute(query, (flight_num, departure_date_and_time, ID_num))
 	conn.commit()
 	cursor.close()
+	return redirect(url_for('home_airline_staff'))
 
-	return redirect(url_for("home_airline_staff"))
+#create new airport page for AIRLINE STAFF
+@app.route('/create_airport_page')
+def create_airport_page():
+	return render_template('create_airport_airline_staff.html')
 
+#create new airport for AIRLINE STAFF
+@app.route('/create_airport_AS', methods=['GET','POST'])
+def create_airport_AS():
+	name = request.form['name']
+	city = request.form['city']
+	cursor = conn.cursor() 
+	ins = "insert into airport values(%s, %s)"
+	cursor.execute(ins, (name, city))
+	conn.commit()
+	cursor.close()
+	return redirect(url_for('home_airline_staff'))
+
+#create new airplane page for AIRLINE STAFF
+@app.route('/create_airplane_page')
+def create_airplane_page():
+	name = session['name']
+	username = session['username']
+	return render_template('create_airplane_airline_staff.html', username=username, name=name)
+
+#creates new airplane for AIRLINE STAFF
+@app.route ('/create_airplane_AS', methods=['GET','POST'])
+def create_airplane_AS():
+	name = session['name']
+	ID_num = request.form['ID_num']
+	seats = request.form['num_of_seats']
+	cursor = conn.cursor()
+	ins = "insert into airplane values(%s, %s)"
+	cursor.execute(ins, (ID_num, seats))
+	conn.commit()
+	cursor.close()
+	cursor = conn.cursor()
+	ins = "insert into owns values(%s, %s)"
+	cursor.execute(ins, (name, ID_num))
+	conn.commit()
+	cursor.close()
+	return redirect(url_for('confirmation_page_airplane'))
+
+#displays all airplanes of airline that AIRLINE STAFF works for 
+@app.route('/confirmation_page_airplane')
+def confirmation_page_airplane():
+	username = session['username']
+	name = session['name']
+	cursor = conn.cursor()
+	query = "Select ID_num from owns natural join works where username = %s"
+	cursor.execute(query, (username))
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('confirmation_page_airplane.html', airplanes = data, name = name)
 
 #searching for fights for CUSTOMER
 @app.route('/search_flights_C', methods=['GET', 'POST'])
 def search_flights_C():
 	email = session['email']
-	departure = request.form['departure'].lower()
-	arrival = request.form['arrival'].lower()
+	departure = request.form['departure']
+	arrival = request.form['arrival']
 	departure_date = request.form['departure_date']
 	return_date = request.form['return_date']
-	cursor = conn.cursor();
+	cursor = conn.cursor()
 	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 		 (name = %s or city = %s) and flight_num in \
 			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
@@ -796,9 +902,6 @@ def search_flights_C():
 			result.append(each)
 	session['departure_searches'] = result
 	if return_date.strip() != '':
-		print("HIIIII")
-		print(return_date)
-		print("HIIIII")
 		cursor = conn.cursor();
 		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 			(name = %s or city = %s) and flight_num in \
@@ -819,8 +922,8 @@ def search_flights_C():
 @app.route('/search_flights_BA', methods=['GET', 'POST'])
 def search_flights_BA():
 	email = session['email']
-	departure = request.form['departure'].lower()
-	arrival = request.form['arrival'].lower()
+	departure = request.form['departure']
+	arrival = request.form['arrival']
 	departure_date = request.form['departure_date']
 	return_date = request.form['return_date']
 	cursor = conn.cursor();
@@ -858,8 +961,8 @@ def search_flights_BA():
 @app.route('/search_flights_AS', methods=['GET', 'POST'])
 def search_flights_AS():
 	username = session['username']
-	departure = request.form['departure'].lower()
-	arrival = request.form['arrival'].lower()
+	departure = request.form['departure']
+	arrival = request.form['arrival']
 	departure_date = request.form['departure_date']
 	return_date = request.form['return_date']
 	cursor = conn.cursor();

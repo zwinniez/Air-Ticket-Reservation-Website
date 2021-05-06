@@ -1,0 +1,18 @@
+<html>
+<head \>
+</head>
+<body style = "background-color:rgb(131, 182, 248); text-align:center" >
+<form action="/create_airport_AS" method="POST">
+    <h1>Add New Airport to the System</h1>
+    <label>Airport Name</label>
+	<input type="text" name = "name" placeholder="LaGuardia" required/></br>
+    <label>City</label>
+	<input type="text" name = "city" placeholder="New York City" required/></br>
+	<input type="submit" value = Confirm />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/home_airline_staff">Go back</a>
+</body>
+</html>

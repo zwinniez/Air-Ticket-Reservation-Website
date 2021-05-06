@@ -1,0 +1,18 @@
+<html>
+<head \>
+</head>
+<body style = "background-color:rgb(215, 161, 223); text-align:center" >
+<form action="/create_airplane_AS" method="POST">
+    <h1>Create New Airplane for {{name}}</h1>
+    <label>ID Number</label>
+	<input type="number" name = "ID_num" placeholder="XXXXXXXXXXXXXXX" required/></br>
+    <label>Number of Seats</label>
+	<input type="number" name = "num_of_seats" placeholder="XXX" required/></br>
+	<input type="submit" value = Confirm />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/home_airline_staff">Go back</a>
+</body>
+</html>

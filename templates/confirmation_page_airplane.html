@@ -1,0 +1,35 @@
+<html>
+<head>
+	<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+	.hide {
+    display: none;
+	}
+</style>
+{% if airplanes %}
+	<h1>Airplanes for {{name}}</h1>
+	<table>
+		<th>Airplane ID</th>
+
+	{% for line in airplanes %}
+		<tr>
+			<td>{{line['ID_num']}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+
+<a href ='/home_airline_staff'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>

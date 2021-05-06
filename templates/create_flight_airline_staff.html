@@ -2,7 +2,7 @@
 <head \>
 </head>
 <body style = "background-color:rgb(230, 144, 187); text-align:center" >
-<form action="/create_new_flight_AS" method="POST">
+<form action="/create_flight_AS" method="POST">
     <h1>Create New Flight for {{name}}</h1>
     <label>Flight Number</label>
 	<input type="text" name = "flight_num" placeholder="A11111111" required/></br>
@@ -28,6 +28,6 @@
 		<p class="error"><strong>Error:</strong> {{error}}</p>
 	{% endif %}
 </form>
-<a href="/">Go back</a>
+<a href="/home_airline_staff">Go back</a>
 </body>
 </html>

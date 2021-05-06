@@ -4,8 +4,9 @@
 <body>
 <h2>Welcome {{username}}</h2>
 
-
-<a href='/create_flight_page'>Create new Flight </a>
+<a href='/create_flight_page'>Create new Flight </a> </br>
+<a href='/create_airplane_page'>Create new Airplane </a> </br>
+<a href='/create_airport_page'>Create new Airport </a> </br>
 
 <h2>Search for available flights</h2>
 <form action="/search_flights_AS" method="POST">
@@ -34,6 +35,72 @@
 	<input type="submit" value = Search />
 </form>
 <br>
+
+<h3>All Booking Agents</h3> 
+<table>
+	<th>Booking Agent Email</th>
+
+{% for line in booking_agents1 %}
+	<tr>
+		<td>{{line['email']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<h3>Top Five Booking Agents in the Past Month (TICKETS SOLD)</h3> 
+<table>
+	<th>Booking Agent Email</th>
+	<th>Booking Agent ID</th>
+	<th>Tickets Sold</th>
+
+{% for line in booking_agents2 %}
+	<tr>
+		<td>{{line['b_email']}}</td>
+		<td>{{line['booking_agent_ID']}}</td>
+		<td>{{line['tickets']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<h3>Top Five Booking Agents in the Past Year (TICKETS SOLD)</h3> 
+<table>
+	<th>Booking Agent Email</th>
+	<th>Booking Agent ID</th>
+	<th>Tickets Sold</th>
+
+{% for line in booking_agents3 %}
+	<tr>
+		<td>{{line['b_email']}}</td>
+		<td>{{line['booking_agent_ID']}}</td>
+		<td>{{line['tickets']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<h3>Top Five Booking Agents in the Past Year (COMMISSION)</h3> 
+<table>
+	<th>Booking Agent Email</th>
+	<th>Booking Agent ID</th>
+	<th>Commission</th>
+
+{% for line in booking_agents4 %}
+	<tr>
+		<td>{{line['b_email']}}</td>
+		<td>{{line['booking_agent_ID']}}</td>
+		<td>{{line['profit']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<h3>Most Frequent Customer: {{freq_customer['c_email']}}</h3>
+
+<h2>Search for Customers' Purchases</h2>
+<form action="/search_customer_purchases" method="POST">
+	<label>Customer's Email</label>
+	<input type="text" name = "c_email" placeholder="xxxxxx@gmail.com" required/> </br>
+	<input type="submit" value = Search />
+</form>
+
 
 <a href="/logout">Logout</a>
 
