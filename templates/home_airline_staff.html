@@ -51,7 +51,7 @@
 </form>
 
 {% if airline_flights %}
-	<h4>Future flights in the {{range}}</h4>
+	<h4>Future flights in the {{range_custom}}</h4>
 	<table>
 		<th>Flight Number</th>
 		<th>Customers</th>
@@ -131,7 +131,46 @@
 {% endfor %}
 </table>
 
-<h3>Most Frequent Customer: {{freq_customer['c_email']}}</h3>
+<h3>Top 3 Destinations in the Past Three Months</h3> 
+<table>
+	<th>Airport Name</th>
+	<th>Ticket Sales</th>
+
+{% for line in top_destinations_month %}
+	<tr>
+		<td>{{line['name']}}</td>
+		<td>{{line['tickets']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<h3>Top 3 Destinations in the Past Year</h3> 
+<table>
+	<th>Airport Name</th>
+	<th>Ticket Sales</th>
+
+{% for line in top_destinations_year %}
+	<tr>
+		<td>{{line['name']}}</td>
+		<td>{{line['tickets']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+
+
+<h3>Most Frequent Customer:</h3>
+<table>
+	<th>Customer Email</th>
+	<th>Ticket Sales</th>
+
+{% for line in freq_customer %}
+	<tr>
+		<td>{{line['c_email']}}</td>
+		<td>{{line['tickets']}}</td>
+	</tr>
+{% endfor %}
+</table>
 
 <h2>Search for Customers' Purchases</h2>
 <form action="/search_customer_purchases" method="POST">

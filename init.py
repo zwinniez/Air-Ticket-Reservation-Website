@@ -335,10 +335,11 @@ def home_customer():
 def home_booking_agent():
 	email = session['email']
 	ID = session['ID']
-	# ---------------------------------------display purchased tickets-----------------------------------------
+	# ---------------------------------------display purchased tickets for future flights---------------------------------------
 	cursor = conn.cursor()
 	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
-		FROM purchase natural join reserve natural join flight WHERE b_email = %s and booking_agent_ID = %s'
+		FROM purchase natural join reserve natural join flight WHERE b_email = %s and booking_agent_ID = %s \
+			and (select now()) - departure_date_and_time <= 0 '
 	cursor.execute(query, (email, ID))
 	data1 = cursor.fetchall() 
 	cursor.close()
@@ -364,7 +365,6 @@ def home_booking_agent():
 		for each in prices:
 			tickets += 1
 			earning += float(each)
-			print(each)
 	avg_commission = round(earning/tickets,2) if tickets != 0 else 0
 	#-----------------------------------------bar graph for TOP FIVE CUSTOMERS--------------------------------
 	customers1 = [] #five top customer emails
@@ -434,7 +434,7 @@ def home_airline_staff():
 				WHERE (b_email is not NULL) and \
 					((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
 					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 1 \
-						GROUP BY b_email, booking_agent_ID ORDER BY tickets DESC"
+						GROUP BY b_email, booking_agent_ID ORDER BY tickets DESC LIMIT 5"
 	cursor.execute(query)
 	booking_agents2 = cursor.fetchall()
 	cursor.close()
@@ -444,7 +444,7 @@ def home_airline_staff():
 			WHERE (b_email is not NULL) and \
 				((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
 					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
-						GROUP BY b_email, booking_agent_ID ORDER BY tickets DESC"
+						GROUP BY b_email, booking_agent_ID ORDER BY tickets DESC LIMIT 5"
 	cursor.execute(query)
 	booking_agents3 = cursor.fetchall()
 	cursor.close()
@@ -454,7 +454,7 @@ def home_airline_staff():
 			WHERE (b_email is not NULL) and \
 				((year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
 					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time))) <= 12 \
-						GROUP BY b_email, booking_agent_ID ORDER BY profit DESC"
+						GROUP BY b_email, booking_agent_ID ORDER BY profit DESC LIMIT 5"
 	cursor.execute(query)
 	booking_agents4 = cursor.fetchall()
 	cursor.close()
@@ -462,11 +462,41 @@ def home_airline_staff():
 		each['profit'] = round(each['profit'], 2)
 	#---------------------------------most freq customer-------------------------------------------------------
 	cursor = conn.cursor()
-	query = "Select c_email from flight as f , reserve as r , ticket as t, purchase as p where \
+	query = "Select c_email, count(t.ticket_ID) as tickets from flight as f , reserve as r , ticket as t, purchase as p where \
 		f.flight_num = r.flight_num and f.name = %s and  r.ticket_ID = t.ticket_ID \
-			and t.ticket_ID = p.ticket_ID group by c_email order by count(t.ticket_ID) desc LIMIT 1"
+			and t.ticket_ID = p.ticket_ID group by c_email order by count(t.ticket_ID) DESC"
 	cursor.execute(query, (name))
-	freq_customer = cursor.fetchone()
+	results = cursor.fetchall()
+	cursor.close()
+	if len(results) != 0 :
+		freq_customer = []
+		most = results[0]['tickets']
+		for each in results:
+			if each['tickets'] == most:
+				freq_customer.append(each)
+			else: 
+				break
+	#-------------------------------top three destinations in last 3 months-------------------------------------
+	cursor = conn.cursor()
+	query = "Select a.name, count(t.ticket_ID) as tickets from ticket as t, reserve as r,\
+		 flight as f, arrival as a where t.ticket_ID = r.ticket_ID and \
+			 r.flight_num = f.flight_num and f.flight_num = a.flight_num and \
+				 t.card_type is not NULL and ((year(CURRENT_TIMESTAMP) - year(t.purhcase_date_and_time)) * 12 +\
+					  (month(CURRENT_TIMESTAMP) - month(t.purhcase_date_and_time))) <= 3 group by a.name\
+						   order by tickets desc limit 3"
+	cursor.execute(query)
+	top_destinations_month = cursor.fetchall()
+	cursor.close()
+	#-------------------------------top three destinations in the last year ----------------------------------
+	cursor = conn.cursor() 
+	query = "Select a.name, count(t.ticket_ID) as tickets from ticket as t, reserve as r, \
+		flight as f, arrival as a where t.ticket_ID = r.ticket_ID and \
+			r.flight_num = f.flight_num and f.flight_num = a.flight_num and \
+				t.card_type is not NULL and ((year(CURRENT_TIMESTAMP) - year(t.purhcase_date_and_time)) * 12 +\
+					 (month(CURRENT_TIMESTAMP) - month(t.purhcase_date_and_time))) <= 12 group by a.name \
+						 order by tickets desc LIMIT 3"
+	cursor.execute(query)
+	top_destinations_year = cursor.fetchall()
 	cursor.close()
 	#-----------------------------------direct sales versus indirect sales pie chart last month------------------
 	colors = ["#066611", "#064589"]
@@ -503,7 +533,6 @@ def home_airline_staff():
 	cursor.execute(query,(name))
 	indirect_year = cursor.fetchone()['total']
 	cursor.close()
-	print(type(indirect_year), "HI"*100)
 	cursor = conn.cursor()
 	query = "SELECT count(*) as total FROM ticket as t, purchase as p, reserve as r, flight as f WHERE\
 				p.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and t.ticket_ID = p.ticket_ID and \
@@ -534,13 +563,15 @@ def home_airline_staff():
 		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, \
 			booking_agents4=booking_agents4, airline_flights = airline_flights, set=zip(pie_labels, pie_values, colors),  set2=zip(pie_labels, pie_values2, colors),\
 				work=name, range_custom=range_custom, labels = labels, values = values,begin=begin[:-6], end=end[:-6], max = 5, total = total,\
-					pie_total =pie_total, pie_total2 = pie_total2)
+					pie_total =pie_total, pie_total2 = pie_total2,\
+						 top_destinations_month = top_destinations_month, top_destinations_year = top_destinations_year)
 	else:
 		return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
 		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, \
 			booking_agents4=booking_agents4, airline_flights = airline_flights,\
 				work=name, range_custom=range_custom, max=100, set=zip(pie_labels, pie_values, colors), set2=zip(pie_labels, pie_values2, colors),\
-					pie_total =pie_total, pie_total2 = pie_total2)
+					pie_total =pie_total, pie_total2 = pie_total2,\
+						 top_destinations_month = top_destinations_month, top_destinations_year = top_destinations_year)
 
 #renders template for phone number add for AIRLINE STAFF
 @app.route('/add_phone_number_staff', methods=["GET","POST"])
@@ -576,10 +607,8 @@ def search_tickets_sold_bar_graph_AS():
 	session['dates'] = ''
 	session['begin'] = begin
 	session['end'] = end
-	print(data)
 	for result in data:
 		session['dates'] += str(result['date']) + ','
-	print(data)
 	return redirect(url_for('home_airline_staff'))
 
 #searches customers of flight of AIRLINE for AIRLINE STAFF
@@ -681,7 +710,7 @@ def search_customers():
 	return render_template('search_customer_purchases.html', name = name, customer_purchases = customer_purchases, c_email = c_email)
 
 #----------------------------custom range BOOKING AGENT bar graph of past purchases---------------------------------
-#-------------queries all past purchase with customized date range and redirected to home CUSTOMER page--------
+#-------------queries all past purchase with customized date range and redirected to home BOOKING AGENT page--------
 @app.route('/earnings_date_range_BA', methods=['GET', 'POST'])
 def earnings_date_range_BA():
 	email = session['email']
@@ -689,8 +718,9 @@ def earnings_date_range_BA():
 	begin = request.form['begin']
 	end = request.form['end']
 	cursor = conn.cursor()
-	query = "SELECT sold_price as price FROM ticket natural join purchase\
-		 WHERE b_email = %s and booking_agent_ID = %s and (%s >purhcase_date_and_time and purhcase_date_and_time > %s) "
+	query = "SELECT (sold_price * commission / 100) as price FROM ticket natural join purchase\
+		 WHERE b_email = %s and booking_agent_ID = %s and \
+			 (%s >purhcase_date_and_time and purhcase_date_and_time > %s)"
 	cursor.execute(query,(email, ID, end, begin))
 	data = cursor.fetchall()
 	cursor.close()
@@ -1023,7 +1053,6 @@ def create_flight_AS():
 	#------------------------------------------INSERT INTO ARRIVAL------------------------------------------------
 	cursor = conn.cursor() 
 	query = "insert into arrival values(%s, %s, %s)"
-	print(arrival)
 	cursor.execute(query, (flight_num, departure_date_and_time, arrival))
 	conn.commit()
 	cursor.close()
