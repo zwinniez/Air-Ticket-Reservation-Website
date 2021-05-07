@@ -1,0 +1,33 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+</style>
+{% if statuses %}
+	<h1>Flight Statuses</h1>
+	<table>
+        <th>Airline</th>
+		<th>Flight Number</th>
+		<th>Status</th>
+
+	{% for line in statuses %}
+		<tr>
+            <td>{{line['name']}}</td>
+			<td>{{line['flight_num']}}</td>
+			<td>{{line['status']}}</td>
+
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+<a href ='/'>Go Back</a>
+
+</body>
+
+
+</html>

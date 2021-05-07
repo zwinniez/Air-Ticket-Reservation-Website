@@ -3,6 +3,7 @@
 </head>
 <body style="background-color:rgb(245, 213, 109);  text-align:left">
 <h2>Welcome {{username}}</h2>
+<a href='/add_phone_number_staff'>Add new phone number</a> </br> </br>
 
 <a href='/create_flight_page'>Create new Flight </a> </br>
 <a href='/create_airplane_page'>Create new Airplane </a> </br>
@@ -188,17 +189,16 @@
 
 </script>
 
-<h3>{{set['item']}}</h3>
 <h3>Direct Versus Indirect Revenue from Past Month</h3>
-<h4>Total ticket sales: {{total}}</h4>
+<h4>Total ticket sales: {{pie_total}}</h4>
 <script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
 <canvas id="chart1" width="600" height="400"></canvas>
 	<script>
 		//pie chart data
 		var pieData = [
-			{% for pie_labels, pie_values2, colors in set2 %}
+			{% for pie_labels, pie_values, colors in set %}
 				{
-					value: {{pie_values2}},
+					value: {{pie_values}},
 					label: "{{pie_labels}}",
 					color: "{{colors}}"
 				},
@@ -214,7 +214,30 @@
 
 </script>
 
+<h3>Direct Versus Indirect Revenue from Past Year</h3>
+<h4>Total ticket sales: {{pie_total2}}</h4>
+<script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+<canvas id="chart2" width="600" height="400"></canvas>
+	<script>
+		//pie chart data
+		var pieData = [
+			{% for pie_labels, pie_values2, colors in set2 %}
+				{
+					value: {{pie_values2}},
+					label: "{{pie_labels}}",
+					color: "{{colors}}"
+				},
+			{% endfor %}
+		];
+	// get pie chart canvas
+	var mychart = document.getElementById("chart2").getContext("2d");
+	steps = 10
+	max = {{max}}
 
+	//draw pie chart
+	new Chart(document.getElementById("chart2").getContext("2d")).Pie(pieData);
+
+</script>
 
 <a href="/logout">Logout</a>
 

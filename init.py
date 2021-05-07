@@ -70,6 +70,7 @@ def loginAuth_customer():
 	if(data):
 		#creates a session for the the user
 		#session is a built in
+		session.clear()
 		session['email'] = email
 		return redirect(url_for('home_customer'))
 	else:
@@ -98,6 +99,7 @@ def loginAuth_booking_agent():
 	if(data):
 		#creates a session for the the user
 		#session is a built in
+		session.clear()
 		session['email'] = email
 		session['ID'] = ID
 		return redirect(url_for('home_booking_agent'))
@@ -126,6 +128,7 @@ def loginAuth_airline_staff():
 	if(data):
 		#creates a session for the the user
 		#session is a built in
+		session.clear()
 		session['username'] = username
 		cursor = conn.cursor()
 		query = 'SELECT name FROM works WHERE username = %s'
@@ -258,8 +261,6 @@ def inserting_rate_C():
 	departure_date_and_time = request.form['departure_date_and_time']
 	rating = request.form['rating']
 	comment = request.form['comment']
-	print(departure_date_and_time, "HI"*100)
-	print(flight_num, departure_date_and_time, rating, comment, "HI"*20)
 	cursor = conn.cursor()
 	query = "INSERT INTO rating values(%s, %s, %s, %s, %s)"
 	cursor.execute(query, (email, flight_num, departure_date_and_time, rating, comment))
@@ -469,7 +470,7 @@ def home_airline_staff():
 	cursor.close()
 	#-----------------------------------direct sales versus indirect sales pie chart last month------------------
 	colors = ["#066611", "#064589"]
-	pie_labels = ["Direct Sales-Customer", "Indirect Sales=Booking Agent"]
+	pie_labels = ["Direct Sales: Customer", "Indirect Sales: Booking Agent"]
 	pie_values = []
 	pie_values2 = []
 	cursor = conn.cursor()
@@ -492,6 +493,7 @@ def home_airline_staff():
 	cursor.close()
 	pie_values.append(direct_month)
 	pie_values.append(indirect_month)
+	pie_total = pie_values[0] + pie_values[1]
 	cursor = conn.cursor()
 	query = "SELECT count(*) as total FROM ticket as t, purchase as p, reserve as r, flight as f WHERE\
 				p.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and t.ticket_ID = p.ticket_ID and \
@@ -512,6 +514,7 @@ def home_airline_staff():
 	direct_year = cursor.fetchone()['total']
 	cursor.close()
 	pie_values2.extend([direct_year, indirect_year])
+	pie_total2 = pie_values2[0] + pie_values2[1]
 	# ----------------------------------tickets sold custom bar graph---------------------------------------
 	if 'dates' in session:
 		begin = session['begin']
@@ -530,13 +533,31 @@ def home_airline_staff():
 		return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
 		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, \
 			booking_agents4=booking_agents4, airline_flights = airline_flights, set=zip(pie_labels, pie_values, colors),  set2=zip(pie_labels, pie_values2, colors),\
-				work=name, range_custom=range_custom, labels = labels, values = values,begin=begin[:-6], end=end[:-6], max = 5, total = total)
+				work=name, range_custom=range_custom, labels = labels, values = values,begin=begin[:-6], end=end[:-6], max = 5, total = total,\
+					pie_total =pie_total, pie_total2 = pie_total2)
 	else:
 		return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
 		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, \
 			booking_agents4=booking_agents4, airline_flights = airline_flights,\
-				work=name, range_custom=range_custom, max=100, set=zip(pie_labels, pie_values, colors), set2=zip(pie_labels, pie_values2, colors))
+				work=name, range_custom=range_custom, max=100, set=zip(pie_labels, pie_values, colors), set2=zip(pie_labels, pie_values2, colors),\
+					pie_total =pie_total, pie_total2 = pie_total2)
 
+#renders template for phone number add for AIRLINE STAFF
+@app.route('/add_phone_number_staff', methods=["GET","POST"])
+def add_phone_number_staff():
+	return render_template("add_phone_number_staff.html")
+
+#add a new phone number for AIRLINE STAFF
+@app.route('/add_phone', methods=["GET","POST"])
+def add_phone():
+	username = session['username']
+	number = request.form['number']
+	cursor = conn.cursor()
+	ins = "INSERT into staff_phone_number values(%s, %s)"
+	cursor.execute(ins, (username, number))
+	conn.commit()
+	cursor.close()
+	return redirect(url_for('home_airline_staff'))
 
 #----------------------------custom range AIRLINE STAFF bar graph of sold tickets---------------------------------
 #-------------queries all tickets sold with customized date range and redirected to home AIRLINE STAFF page--------
@@ -820,7 +841,18 @@ def purchased_date_range_C():
 		session['prices'] += str(result['price']) + ' '
 		session['dates'] += str(result['date']) + ','
 	return redirect(url_for('home_customer'))
-	
+
+#search flights page without USER LOGIN
+@app.route("/flights_I")
+def flights_I():
+	departure_searches = session['departure_searches']
+	if 'return_searches' in session:
+		return_searches = session['return_searches']
+	else:
+		return_searches = None
+	return render_template('flights_index.html', departure_searches=departure_searches,\
+		return_searches = return_searches)
+
 #search flights page for CUSTOMER
 @app.route('/flights')
 def flights():
@@ -857,6 +889,12 @@ def flights_airline_staff():
 	return render_template('flights_airline_staff.html', username=username, departure_searches=departure_searches,\
 		return_searches = return_searches)
 
+#search flight status for given flight for NO USER LOGIN
+@app.route('/flight_status_I')
+def flight_status_I():
+	statuses = session['statuses']
+	return render_template('flight_status_index.html', statuses=statuses)
+
 @app.route('/flight_status')
 def flight_status():
 	email = session['email']
@@ -874,6 +912,23 @@ def flight_status_airline_staff():
 	username = session['username']
 	statuses = session['statuses']
 	return render_template('flight_status_airline_staff.html', username=username, statuses=statuses)
+
+#searches the status of flights based on given name, flightnum, and status for no USER LOGIN
+@app.route('/search_status_I', methods=['GET', 'POST'])
+def search_status_I():
+	airline_name = request.form['airline_name']
+	flight_num = request.form['flight_num']
+	departure_date = request.form['departure_date']
+	arrival_date = request.form['arrival_date']
+	cursor = conn.cursor()
+	query = 'SELECT name, flight_num, status FROM flight WHERE\
+		 name = %s and flight_num = %s and departure_date_and_time = %s \
+		 	 and arrival_date_and_time = %s'
+	cursor.execute(query, (airline_name, flight_num, departure_date, arrival_date))
+	data3 = cursor.fetchall()
+	cursor.close()
+	session['statuses'] = data3
+	return redirect(url_for('flight_status_I'))
 
 @app.route('/search_status_C', methods=['GET', 'POST'])
 def search_status_C():
@@ -1040,7 +1095,45 @@ def confirmation_page_airplane():
 	cursor.close()
 	return render_template('confirmation_page_airplane.html', airplanes = data, name = name)
 
-#searching for fights for CUSTOMER
+#saerch for flights without USER login
+@app.route("/search_flights_I", methods = ["GET", "POST"])
+def search_flights_I():
+	departure = request.form['departure']
+	arrival = request.form['arrival']
+	departure_date = request.form['departure_date']
+	return_date = request.form['return_date']
+	cursor = conn.cursor()
+	query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+		 (name = %s or city = %s) and flight_num in \
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s)'
+	cursor.execute(query, (arrival, arrival, departure, departure))
+	data2 = cursor.fetchall()
+	cursor.close()
+	year = departure_date[0:4]
+	month = departure_date[5:7]
+	result = []
+	for each in data2:
+		if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
+			result.append(each)
+	session['departure_searches'] = result
+	if return_date.strip() != '':
+		cursor = conn.cursor();
+		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+			(name = %s or city = %s) and flight_num in \
+				(select flight_num FROM airport natural join departure where name = %s or city = %s)'
+		cursor.execute(query, (departure, departure, arrival, arrival))
+		data2 = cursor.fetchall()
+		cursor.close()
+		year = return_date[0:4]
+		month = return_date[5:7]
+		result = []
+		for each in data2:
+			if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
+				result.append(each)
+		session['return_searches'] = result
+	return redirect(url_for('flights_I'))
+
+#searching for flights for CUSTOMER
 @app.route('/search_flights_C', methods=['GET', 'POST'])
 def search_flights_C():
 	email = session['email']
@@ -1070,8 +1163,8 @@ def search_flights_C():
 		cursor.execute(query, (departure, departure, arrival, arrival))
 		data2 = cursor.fetchall()
 		cursor.close()
-		year = departure_date[0:4]
-		month = departure_date[5:7]
+		year = return_date[0:4]
+		month = return_date[5:7]
 		result = []
 		for each in data2:
 			if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
@@ -1109,8 +1202,8 @@ def search_flights_BA():
 		cursor.execute(query, (departure, departure, arrival, arrival))
 		data2 = cursor.fetchall()
 		cursor.close()
-		year = departure_date[0:4]
-		month = departure_date[5:7]
+		year = return_date[0:4]
+		month = return_date[5:7]
 		result = []
 		for each in data2:
 			if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):
@@ -1141,15 +1234,15 @@ def search_flights_AS():
 			result.append(each)
 	session['departure_searches'] = result
 	if return_date.strip() != '':
-		cursor = conn.cursor();
+		cursor = conn.cursor()
 		query = 'SELECT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
 			(name = %s or city = %s) and flight_num in \
 				(select flight_num FROM airport natural join departure where name = %s or city = %s)'
 		cursor.execute(query, (departure, departure, arrival, arrival))
 		data2 = cursor.fetchall()
 		cursor.close()
-		year = departure_date[0:4]
-		month = departure_date[5:7]
+		year = return_date[0:4]
+		month = return_date[5:7]
 		result = []
 		for each in data2:
 			if each['departure_date_and_time'].year == int(year) and each['departure_date_and_time'].month == int(month):

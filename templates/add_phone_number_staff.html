@@ -1,0 +1,16 @@
+<html>
+<head \>
+</head>
+<body style = "background-color:rgb(163, 26, 95); text-align:center" >
+<form action="/add_phone" method="POST">
+    <h1>Add a new Phone Number</h1>
+    <label>Phone Number</label>
+	<input type="number" name = "number" placeholder="XXX-XXX-XXXX" required/></br>
+	<input type="submit" value = Confirm />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+<a href="/home_airline_staff">Go back</a>
+</body>
+</html>
