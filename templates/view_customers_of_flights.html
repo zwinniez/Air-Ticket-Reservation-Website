@@ -1,0 +1,32 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+</style>
+<h2>Customers of this {{name}}'s Flight</h2>
+{% if customers %}
+	<table>
+        <th>Email</th>
+
+	{% for line in customers%}
+		<tr>
+            <td>{{line['c_email']}}</td>
+
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+
+<a href ='/home_airline_staff'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>

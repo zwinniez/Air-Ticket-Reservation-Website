@@ -398,32 +398,29 @@ def home_booking_agent():
 	for each in data:
 		customers2.append(each['c_email'])
 		commissions.append(round(each['profit'],2))
-		print(each)
 	return render_template('home_booking_agent.html', email=email, flights=data1, commission=round(earning,2), \
 		tickets = tickets, max1 = 5, avg_commission = avg_commission, ticket_count = ticket_count, customers1 = customers1,\
 			customers2 = customers2, commissions = commissions, max2 = 1000)
 
 #home page for airline staff
-@app.route('/home_airline_staff')
+@app.route('/home_airline_staff', methods=["GET", "POST"])
 def home_airline_staff():
 	username = session['username']
 	name = session['name']
-	# ---------------------------------------display purchased tickets-------------------------------
+	#--------------------------------custom/default flights for AIRLINE of AIRLINE STAFF
 	cursor = conn.cursor()
-	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
-		FROM purchase natural join reserve natural join flight WHERE c_email = %s and \
-			departure_date_and_time - (select now()) > 0'
-	cursor.execute(query, (username))
-	data1 = cursor.fetchall()
-	cursor.close()
-	# ---------------------------------------display past flights and comments ------------------------
-	cursor = conn.cursor()
-	query = 'SELECT name, flight_num, departure_date_and_time, arrival_date_and_time, status \
-		FROM purchase natural join reserve natural join flight WHERE c_email = %s and \
-			arrival_date_and_time - (select now()) <= 0'
-	cursor.execute(query, (username))
-	data2 = cursor.fetchall()
-	cursor.close()
+	if 'custom_flights' in session:
+		airline_flights = session['custom_flights']
+		range_custom = "searched range from " + str(session['begin']) + " to " + str(session['end'])
+	else:
+		query = "SELECT DISTINCT flight_num, departure_date_and_time FROM flight NATURAL JOIN reserve\
+					WHERE name = %s and \
+						((year(departure_date_and_time) - year(CURRENT_TIMESTAMP)) * 12 + \
+						(month(departure_date_and_time) - month(CURRENT_TIMESTAMP))) <= 1"
+		cursor.execute(query,(name))
+		airline_flights = cursor.fetchall()
+		cursor.close()
+		range_custom = "next 30 days"
 	#-------------------------------all booking agents------------------------------------------------
 	cursor = conn.cursor()
 	query = "Select email from booking_agent WHERE email is not NULL"
@@ -470,10 +467,174 @@ def home_airline_staff():
 	cursor.execute(query, (name))
 	freq_customer = cursor.fetchone()
 	cursor.close()
+	#-----------------------------------direct sales versus indirect sales pie chart last month------------------
+	colors = ["#066611", "#064589"]
+	pie_labels = ["Direct Sales-Customer", "Indirect Sales=Booking Agent"]
+	pie_values = []
+	pie_values2 = []
+	cursor = conn.cursor()
+	query = "SELECT count(*) as total FROM ticket as t, purchase as p, reserve as r, flight as f WHERE\
+				p.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and t.ticket_ID = p.ticket_ID and\
+					 b_email is not NULL and f.name = %s and \
+					((year(CURRENT_TIMESTAMP) - year(t.purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(t.purhcase_date_and_time))) <= 1"
+	cursor.execute(query,(name))
+	indirect_month = cursor.fetchone()['total']
+	cursor.close()
+	cursor = conn.cursor()
+	query = "SELECT count(*) as total FROM ticket as t, purchase as p, reserve as r, flight as f WHERE\
+				p.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and t.ticket_ID = p.ticket_ID and\
+					 b_email is NULL and f.name = %s and \
+					((year(CURRENT_TIMESTAMP) - year(t.purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(t.purhcase_date_and_time))) <= 1"
+	cursor.execute(query, (name))
+	direct_month = cursor.fetchone()['total']
+	cursor.close()
+	pie_values.append(direct_month)
+	pie_values.append(indirect_month)
+	cursor = conn.cursor()
+	query = "SELECT count(*) as total FROM ticket as t, purchase as p, reserve as r, flight as f WHERE\
+				p.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and t.ticket_ID = p.ticket_ID and \
+					 b_email is not NULL and f.name = %s and \
+					((year(CURRENT_TIMESTAMP) - year(t.purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(t.purhcase_date_and_time))) <= 12"
+	cursor.execute(query,(name))
+	indirect_year = cursor.fetchone()['total']
+	cursor.close()
+	print(type(indirect_year), "HI"*100)
+	cursor = conn.cursor()
+	query = "SELECT count(*) as total FROM ticket as t, purchase as p, reserve as r, flight as f WHERE\
+				p.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and t.ticket_ID = p.ticket_ID and \
+					 b_email is NULL and f.name = %s and \
+					((year(CURRENT_TIMESTAMP) - year(t.purhcase_date_and_time)) * 12 + \
+					(month(CURRENT_TIMESTAMP) - month(t.purhcase_date_and_time))) <= 12"
+	cursor.execute(query, (name))
+	direct_year = cursor.fetchone()['total']
+	cursor.close()
+	pie_values2.extend([direct_year, indirect_year])
+	# ----------------------------------tickets sold custom bar graph---------------------------------------
+	if 'dates' in session:
+		begin = session['begin']
+		end = session['end']
+		labels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+		values = [0 for each in range(12)]
+		total = 0
+		dates = session['dates'].strip(',').split(',')
+		for each in range(12):
+			for j in range(len(dates)):
+				date = dates[j].split()[0]
+				month = int(date.split("-")[1])
+				if month == each+1:
+					values[each] += 1
+					total += 1
+		return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
+		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, \
+			booking_agents4=booking_agents4, airline_flights = airline_flights, set=zip(pie_labels, pie_values, colors),  set2=zip(pie_labels, pie_values2, colors),\
+				work=name, range_custom=range_custom, labels = labels, values = values,begin=begin[:-6], end=end[:-6], max = 5, total = total)
+	else:
+		return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
+		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, \
+			booking_agents4=booking_agents4, airline_flights = airline_flights,\
+				work=name, range_custom=range_custom, max=100, set=zip(pie_labels, pie_values, colors), set2=zip(pie_labels, pie_values2, colors))
 
-	return render_template('home_airline_staff.html', username = username, name=name, freq_customer = freq_customer,\
-		booking_agents1 = booking_agents1, booking_agents2=booking_agents2, booking_agents3=booking_agents3, booking_agents4=booking_agents4)
 
+#----------------------------custom range AIRLINE STAFF bar graph of sold tickets---------------------------------
+#-------------queries all tickets sold with customized date range and redirected to home AIRLINE STAFF page--------
+@app.route('/search_tickets_sold_bar_graph_AS', methods=['GET', 'POST'])
+def search_tickets_sold_bar_graph_AS():
+	name = session['name']
+	begin = request.form['begin']
+	end = request.form['end']
+	cursor = conn.cursor()
+	query = "SELECT purhcase_date_and_time as date FROM ticket as t, reserve as r, flight as f\
+		 WHERE t.ticket_ID = r.ticket_ID and r.flight_num = f.flight_num and f.name = %s and \
+			 (%s >purhcase_date_and_time and purhcase_date_and_time > %s) "
+	cursor.execute(query,(name, end, begin))
+	data = cursor.fetchall()
+	cursor.close()
+	session['dates'] = ''
+	session['begin'] = begin
+	session['end'] = end
+	print(data)
+	for result in data:
+		session['dates'] += str(result['date']) + ','
+	print(data)
+	return redirect(url_for('home_airline_staff'))
+
+#searches customers of flight of AIRLINE for AIRLINE STAFF
+@app.route("/search_customers_of_flight", methods=['GET', 'POST'])
+def search_customers_of_flights():
+	flight_num = request.form['flight_num']
+	departure_date_and_time = request.form['departure_date_and_time']
+	cursor = conn.cursor()
+	query = "SELECT DISTINCT c_email FROM purchase natural join reserve natural join flight WHERE flight_num = %s and departure_date_and_time = %s"
+	cursor.execute(query,(flight_num, departure_date_and_time))
+	session['customers_of_flight'] = cursor.fetchall()
+	cursor.close()
+	return redirect(url_for('view_customers_of_flights_page'))
+
+#render templates for list of customers of flight of AIRLINE for AIRLINE STAFF 
+@app.route('/view_customers_of_flights_page')
+def view_customers_of_flights_page():
+	customers = session['customers_of_flight']
+	name = session['name']
+	return render_template('view_customers_of_flights.html', customers = customers, name=name)
+
+#searches ratings of flight of AIRLINE for AIRLINE STAFF
+@app.route("/search_ratings_of_flight", methods=['GET', 'POST'])
+def search_ratings_of_flights():
+	flight_num = request.form['flight_num']
+	departure_date_and_time = request.form['departure_date_and_time']
+	cursor = conn.cursor()
+	query = "SELECT rating, comment, email FROM rating WHERE flight_num = %s and departure_date_and_time = %s"
+	cursor.execute(query,(flight_num, departure_date_and_time))
+	data = cursor.fetchall()
+	ratings = []
+	for each in data:
+		ratings.append((each['email'],int(each['rating']),each['comment']))
+	session['ratings'] = ratings
+	cursor.close()
+	cursor = conn.cursor()
+	query = "SELECT AVG(rating) as avg FROM rating WHERE flight_num = %s and departure_date_and_time = %s"
+	cursor.execute(query, (flight_num, departure_date_and_time))
+	data = cursor.fetchone()
+	if data['avg'] is not None:
+		avg_rating = int(data['avg'])
+	else: 
+		avg_rating = None
+	session['average_rating'] = avg_rating 
+	return redirect(url_for('view_ratings_of_flights_page'))
+
+#render html for ratings of flight of AIRLINE for AIRLINE STAFF 
+@app.route('/view_ratings_of_flight_page')
+def view_ratings_of_flights_page():
+	ratings = session['ratings']
+	avg_rating = session['average_rating']
+	name = session['name']
+	return render_template('view_ratings_of_flight_page.html', avg_rating= avg_rating, ratings=ratings, name=name)
+
+#searches custom date range and departure/arrival places for AIRLINE STAFF
+@app.route('/search_airline_flights_AS', methods=['GET', 'POST'])
+def search_airline_flights_As():
+	name = session['name']
+	departure_place = request.form['departure_place']
+	arrival_place = request.form['arrival_place']
+	begin = request.form['begin']
+	end = request.form['end']
+	cursor = conn.cursor()
+	query = 'SELECT DISTINCT flight_num, departure_date_and_time FROM airport natural join arrival WHERE\
+		 (name = %s or city = %s) and flight_num in \
+			 (select flight_num FROM airport natural join departure where name = %s or city = %s) and\
+				 departure_date_and_time >= %s and departure_date_and_time <= %s' 
+	cursor.execute(query,(arrival_place, arrival_place, departure_place, departure_place, begin, end))
+	custom_flights = cursor.fetchall()
+	cursor.close()
+	session['custom_flights'] = custom_flights
+	session['begin'] = begin
+	session['end'] = end
+
+	return redirect(url_for('home_airline_staff'))
+	
 #searches up a particular customer's flights of specific airline of AIRLINE STAFF'S
 @app.route("/search_customer_purchases", methods=['GET', 'POST'])
 def search_customer_purchases():

@@ -1,14 +1,14 @@
 <html>
 <head>
 </head>
-<body>
+<body style="background-color:rgb(245, 213, 109);  text-align:left">
 <h2>Welcome {{username}}</h2>
 
 <a href='/create_flight_page'>Create new Flight </a> </br>
 <a href='/create_airplane_page'>Create new Airplane </a> </br>
 <a href='/create_airport_page'>Create new Airport </a> </br>
 
-<h2>Search for available flights</h2>
+<h2>Search for available flights from ALL AIRLINES</h2>
 <form action="/search_flights_AS" method="POST">
 	<label>Departure Airline/City</label>
 	<input type="text" name = "departure" placeholder="departure point" required/> </br>
@@ -35,6 +35,44 @@
 	<input type="submit" value = Search />
 </form>
 <br>
+
+<h2>Search for {{name}} flights</h2>
+<form action="/search_airline_flights_AS" method="POST">
+	<label>Departure Airline/City</label>
+	<input type="text" name = "departure_place" placeholder="departure point" required/> </br>
+	<label>Arrival Airline/City</label>
+	<input type="text" name = "arrival_place" placeholder="arrival destination" required/> </br>
+	<label>Departure Date</label>
+	<input type="date" name = "begin" placeholder="Begin" required/> </br>
+	<label>Arrival Date</label>
+	<input type="date" name = "end" placeholder="End" required/></br>
+	<input type="submit" value = Search />
+</form>
+
+{% if airline_flights %}
+	<h4>Future flights in the {{range}}</h4>
+	<table>
+		<th>Flight Number</th>
+		<th>Customers</th>
+		<th>Ratings</th>
+
+	{% for line in airline_flights %}
+		<tr>
+			<td>{{line['flight_num']}}</td>
+			<form action='search_customers_of_flight' method = "POST">
+				<input class = 'hide' name = "flight_num" type = 'text' value = "{{line['flight_num']}}" readonly>
+				<input class = 'hide' name = "departure_date_and_time" type = 'text' value = "{{line['departure_date_and_time']}}" readonly>
+				<td><button type = "submit">View Customers</button></td>
+			</form>
+			<form action='search_ratings_of_flight' method = "POST">
+				<input class = 'hide' name = "flight_num" type = 'text' value = "{{line['flight_num']}}" readonly>
+				<input class = 'hide' name = "departure_date_and_time" type = 'text' value = "{{line['departure_date_and_time']}}" readonly>
+				<td><button type = "submit">View Ratings</button></td>
+			</form>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
 
 <h3>All Booking Agents</h3> 
 <table>
@@ -100,6 +138,82 @@
 	<input type="text" name = "c_email" placeholder="xxxxxx@gmail.com" required/> </br>
 	<input type="submit" value = Search />
 </form>
+
+<h2>Display Ticket Sales</h2>
+<form action="/search_tickets_sold_bar_graph_AS" method="POST">
+	<label>Begin Date</label>
+	<input type="datetime-local" name = "begin" placeholder="YYYY-MM-DD" required/> </br>
+	<label>End Date</label>
+	<input type="datetime-local" name = "end" placeholder="YYYY-MM-DD" required/>  </br>
+	<input type="submit" value = Search />
+</form>
+
+<h3>Tickets Sold from  {{begin}} to  {{end}}</h3>
+<h4>Total ticket sales: {{total}}</h4>
+<script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+
+<canvas id="chart" width="600" height="250"></canvas>
+	<script>
+		//bar chart data
+		var barData = {
+			labels : [{% for item in labels %}
+				"{{item}}",
+				{% endfor %}],
+			datasets: [{
+				fillColor: "rgba(151,187,205,0.2)",
+				strokeColor: "rgba(151,187,205,1",
+				pointColor: "rgba(151,187,205,1)",
+				data: [ {% for item in values %}
+					"{{item}}",
+					{% endfor %}]
+			}]
+		}
+	// get bar chart canvas
+	var mychart = document.getElementById("chart").getContext("2d");
+	steps = 5
+	max = {{max}}
+
+	//draw bar chart 
+	new Chart(mychart).Bar(barData, {
+		scaleOverride: true,
+		scaleSteps: steps,
+		scaleStepWidth: Math.ceil(max/steps),
+		scaleStartValue: 0,
+		scaleShowVerticalLines: true,
+		scaleShowGrideLines: true,
+		barShowStroke: true,
+		scakeShowLabels: true
+	}
+	);
+
+</script>
+
+<h3>{{set['item']}}</h3>
+<h3>Direct Versus Indirect Revenue from Past Month</h3>
+<h4>Total ticket sales: {{total}}</h4>
+<script src='https:cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+<canvas id="chart1" width="600" height="400"></canvas>
+	<script>
+		//pie chart data
+		var pieData = [
+			{% for pie_labels, pie_values2, colors in set2 %}
+				{
+					value: {{pie_values2}},
+					label: "{{pie_labels}}",
+					color: "{{colors}}"
+				},
+			{% endfor %}
+		];
+	// get pie chart canvas
+	var mychart = document.getElementById("chart1").getContext("2d");
+	steps = 10
+	max = {{max}}
+
+	//draw pie chart
+	new Chart(document.getElementById("chart1").getContext("2d")).Pie(pieData);
+
+</script>
+
 
 
 <a href="/logout">Logout</a>

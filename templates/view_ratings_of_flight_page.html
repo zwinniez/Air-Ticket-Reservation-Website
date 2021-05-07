@@ -1,0 +1,37 @@
+<html>
+<head>
+</head>
+<body>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid rgb(31, 0, 143);
+	}
+</style>
+<h2>Ratings of this {{name}}'s Flight</h2>
+
+{% if ratings %}
+    <h4>Average Rating: {{avg_rating}}</h4>
+	<table>
+        <th>Customer Email</th>
+        <th>Rating</th>
+        <th>Comment</th>
+
+	{% for line in ratings %}
+		<tr>
+            <td>{{line[0]}}</td>
+            <td>{{line[1]}}</td>
+            <td>{{line[2]}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+
+<a href ='/home_airline_staff'>Go Back</a>
+
+<a href="/logout">Logout</a>
+
+</body>
+
+
+</html>
