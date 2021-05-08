@@ -302,12 +302,13 @@ def home_customer():
 	colors = []
 	if 'prices' not in session: #default bar graph
 		cursor = conn.cursor()
-		query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
-			WHERE email = %s and (year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
+		query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join purchase\
+			WHERE c_email = %s and (year(CURRENT_TIMESTAMP) - year(purhcase_date_and_time)) * 12 + \
 					(month(CURRENT_TIMESTAMP) - month(purhcase_date_and_time)) <= 12" #fix mispelling in db
 		cursor.execute(query, (email))
 		data4= cursor.fetchall()
 		cursor.close()
+		print(data4)
 		#data4 is a list of dictionaries
 		#each result is a dicitonary with attributes as keys 
 		for i in range(12):
@@ -320,11 +321,12 @@ def home_customer():
 		dates = session['dates'].strip(',').split(',')
 		for i in range(12):
 			for j in range(len(prices)):
-				date = dates[j].split()[0]
-				month = int(date.split("-")[1])
-				if month == i+1:
-					values[i] += float(prices[j])
-					total += float(prices[j])
+				if dates[j] != '':
+					date = dates[j].split()[0]
+					month = int(date.split("-")[1])
+					if month == i+1:
+						values[i] += float(prices[j])
+						total += float(prices[j])
 
 	return render_template('home_customer.html', email=email, flights=data1, past_flights=data2, \
 		title="Summary of past spendings", max=10000, labels=labels, values=values, \
@@ -803,7 +805,7 @@ def payment_info_C():
 	name = request.form['name']
 	expiration_date = request.form['expiration_date']
 	cursor = conn.cursor()
-	query = "INSERT INTO purchase values(%s, %s, NULL, NULL, NULL, NULL)"
+	query = "INSERT INTO purchase values(%s, %s, NULL, NULL, NULL)"
 	cursor.execute(query, (ticket_ID, email))
 	conn.commit()
 	cursor.close()
@@ -860,8 +862,8 @@ def purchased_date_range_C():
 	begin = request.form['begin']
 	end = request.form['end']
 	cursor = conn.cursor()
-	query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join customer\
-		 WHERE email = %s and (%s >purhcase_date_and_time and purhcase_date_and_time > %s) "
+	query = "SELECT sold_price as price, purhcase_date_and_time as date FROM ticket natural join purchase\
+		 WHERE c_email = %s and (%s >purhcase_date_and_time and purhcase_date_and_time > %s) "
 	cursor.execute(query,(email, end, begin))
 	data = cursor.fetchall()
 	cursor.close()
